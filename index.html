@@ -299,15 +299,10 @@ function generateEmbedHtml(url) {
   const kickMatch = url.match(/kick\.com\/(\w+)/);
   if (kickMatch) {
     const channel = kickMatch[1];
-    return `<div class="iframe-container"><iframe src="https://kick.com/embed/${channel}" allowfullscreen></iframe></div>`;
+    return `<div class="iframe-container"><iframe src="https://kick.com/embed/${channel}?autoplay=true" allowfullscreen></iframe></div>`;
   }
 
-  const locoMatch = url.match(/loco\.tv\/(\w+)/);
-  if (locoMatch) {
-    const channel = locoMatch[1];
-    return `<div class="iframe-container"><iframe src="https://player.loco.tv/player/${channel}" allowfullscreen></iframe></div>`;
-  }
-
+  // Loco não suportado no momento
   return null;
 }
 
