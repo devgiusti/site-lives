@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mosaico de Conteúdo</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .video-area {
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      padding: 10px;
+      gap: 10px;
+      overflow-y: auto;
+      background-color: #121212;
+    }
+
+    .content-card {
+      flex: 0 0 49%;
+      max-width: 49%;
+      background-color: #000;
+      position: relative;
+    }
+
+    .iframe-container {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+    }
+
+    .iframe-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .remove-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: red;
+      color: white;
+      border-radius: 10px;
+      padding: 5px;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .chat-panel {
+      width: 350px;
+      max-width: 100%;
+      background-color: #000;
+      display: flex;
+      flex-direction: column;
+      border-left: 2px solid #333;
+    }
+
+    .chat-header {
+      padding: 10px;
+      background-color: #242424;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-select {
+      flex-grow: 1;
+      margin-left: 10px;
+      background-color: #181818;
+      color: white;
+      border: 1px solid #444;
+      padding: 5px;
+    }
+
+    .chat-container {
+      flex-grow: 1;
+    }
+
+    .chat-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .fab {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #6200ee;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 56px;
+      height: 56px;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 999;
+    }
+
+        /* Painel de Adição de URL (Overlay) */
+        .url-input-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--overlay-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+        }
+
+        .url-input-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+            transition-delay: 0s;
+        }
+
+        .url-input-panel {
+            background-color: var(--secondary-bg);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .url-input-panel input[type="url"] {
+            padding: 12px;
+            border: 1px solid var(--card-border);
+            background-color: var(--tertiary-bg);
+            color: var(--primary-text);
+            border-radius: 5px;
+            font-size: 16px;
+        }
+         .url-input-panel input[type="url"]::placeholder {
+            color: #888;
+        }
+
+
+        .url-input-panel button {
+            padding: 12px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        .url-input-panel button:hover {
+            background-color: #0056b3;
+        }
+
+    .hidden {
+      display: none !important;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="video-area" id="contentGrid"></div>
+
+  <div class="chat-panel" id="chatPanel">
+    <div class="chat-header">
+      <button onclick="toggleChat()" id="toggleChatBtn">Ocultar</button>
+      <select id="chatSelect" class="chat-select" onchange="changeChat()">
+        <option disabled selected>Selecione o chat</option>
+      </select>
+    </div>
+    <div class="chat-container" id="chatContainer"></div>
+  </div>
+
+  <button class="fab" id="fab">+</button>
+
+  <div class="url-input-overlay" id="urlInputOverlay">
+    <div class="url-input-panel" style="background-color: black; color: white; padding: 30px; border-radius: 10px;">
+      <input type="url" id="urlInput" placeholder="Cole o URL da live/vídeo aqui">
+      <button id="addUrlButton">Adicionar</button>
+    </div>
+  </div>
+
+  <button class="fab" id="showChatBtn" style="display: none; right: 90px;">💬</button>
+
+
+  <script>
+    const fab = document.getElementById('fab');
+    const urlInputOverlay = document.getElementById('urlInputOverlay');
+    const urlInput = document.getElementById('urlInput');
+    const addUrlButton = document.getElementById('addUrlButton');
+    const contentGrid = document.getElementById('contentGrid');
+    const chatSelect = document.getElementById('chatSelect');
+    const chatContainer = document.getElementById('chatContainer');
+    const chatPanel = document.getElementById('chatPanel');
+    const toggleChatBtn = document.getElementById('toggleChatBtn');
+
+    const LS_KEY = 'mosaicContentLinks';
+    let twitchFileProtocolWarningShown = false;
+    const twitchChannels = [];
+
+    fab.addEventListener('click', () => toggleOverlay());
+
+    urlInputOverlay.addEventListener('click', (event) => {
+      if (event.target === urlInputOverlay) toggleOverlay(false);
+    });
+
+    addUrlButton.addEventListener('click', handleAddUrl);
+    urlInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleAddUrl());
+
+function toggleOverlay(forceShow = null) {
+  const isActive = fab.classList.contains('active');
+  const shouldShow = forceShow === true || (forceShow === null && !isActive);
+
+  urlInputOverlay.classList.toggle('visible', shouldShow);
+  fab.classList.toggle('active', shouldShow);
+  fab.textContent = shouldShow ? '×' : '+';
+
+  if (shouldShow) {
+    urlInput.focus();
+  }
+}
+
+    function handleAddUrl() {
+      const url = urlInput.value.trim();
+      if (!isValidHttpUrl(url)) return alert("URL inválida. Use http:// ou https://");
+
+      const embedHtml = generateEmbedHtml(url);
+      if (embedHtml) {
+        addContentToGrid(url, embedHtml);
+        saveLink(url);
+        urlInput.value = '';
+        toggleOverlay(false);
+      } else {
+        if (!twitchFileProtocolWarningShown || !url.includes('twitch.tv')) {
+          alert("Plataforma não suportada ou embed inválido.");
+        }
+      }
+    }
+
+    function isValidHttpUrl(string) {
+      try {
+        const url = new URL(string);
+        return url.protocol === "http:" || url.protocol === "https:";
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function generateEmbedHtml(url) {
+      const twitchMatch = url.match(/twitch\.tv\/(\w+)/);
+      if (twitchMatch) {
+        const channel = twitchMatch[1];
+        const parent = location.hostname || 'localhost';
+
+        if (location.protocol === 'file:') {
+          twitchFileProtocolWarningShown = true;
+          alert("Abra em um servidor local (Live Server, etc) para Twitch funcionar.");
+          return null;
+        }
+
+        if (!twitchChannels.includes(channel)) {
+          twitchChannels.push(channel);
+          const opt = document.createElement('option');
+          opt.value = channel;
+          opt.textContent = channel;
+          chatSelect.appendChild(opt);
+        }
+
+        return `<div class="iframe-container"><iframe src="https://player.twitch.tv/?channel=${channel}&parent=${parent}&theme=dark" allowfullscreen></iframe></div>`;
+      }
+
+      const youtubeMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([\w-]{11})/);
+      if (youtubeMatch) {
+        const videoId = youtubeMatch[1];
+        return `<div class="iframe-container"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
+      }
+
+      return null;
+    }
+
+
+    function saveLink(url) {
+      const links = JSON.parse(localStorage.getItem(LS_KEY)) || [];
+      if (!links.includes(url)) {
+        links.push(url);
+        localStorage.setItem(LS_KEY, JSON.stringify(links));
+      }
+    }
+
+            function addContentToGrid(originalUrl, embedHtml) {
+                const card = document.createElement('div');
+                card.classList.add('content-card');
+                card.dataset.url = originalUrl; // Guardar o URL original para referência
+
+                const iframeContainer = document.createElement('div');
+                iframeContainer.classList.add('iframe-container');
+                iframeContainer.innerHTML = embedHtml;
+                
+                // Botão de remover (opcional, mas útil)
+                const removeButton = document.createElement('button');
+                removeButton.innerHTML = '&times;';
+                removeButton.title = 'Remover este item';
+                removeButton.style.position = 'absolute';
+                removeButton.style.top = '5px';
+                removeButton.style.right = '5px';
+                removeButton.style.zIndex = '10';
+                removeButton.style.background = 'rgba(0,0,0,0.5)';
+                removeButton.style.color = 'white';
+                removeButton.style.border = 'none';
+                removeButton.style.borderRadius = '50%';
+                removeButton.style.width = '24px';
+                removeButton.style.height = '24px';
+                removeButton.style.fontSize = '16px';
+                removeButton.style.lineHeight = '24px';
+                removeButton.style.textAlign = 'center';
+                removeButton.style.cursor = 'pointer';
+                removeButton.style.opacity = '0.7';
+                removeButton.onmouseover = () => removeButton.style.opacity = '1';
+                removeButton.onmouseout = () => removeButton.style.opacity = '0.7';
+
+function removeChatOption(url) {
+  // Extrair o canal Twitch do URL (se existir)
+  const twitchMatch = url.match(/twitch\.tv\/(\w+)/);
+  if (!twitchMatch) return;
+
+  const channel = twitchMatch[1];
+
+  // Remover do array de canais
+  const index = twitchChannels.indexOf(channel);
+  if (index !== -1) {
+    twitchChannels.splice(index, 1);
+  }
+
+  // Remover do select
+  const options = Array.from(chatSelect.options);
+  for (const option of options) {
+    if (option.value === channel) {
+      chatSelect.removeChild(option);
+    }
+  }
+
+  // Se o chat atual estiver aberto e for do canal removido, limpar chat
+  if (chatSelect.value === channel) {
+    chatSelect.value = ''; // Reseta o select
+    chatContainer.innerHTML = ''; // Remove o iframe do chat
+  }
+}
+
+
+removeButton.addEventListener('click', (e) => {
+  e.stopPropagation();
+  contentGrid.removeChild(card);
+  removeLink(originalUrl);
+  removeChatOption(originalUrl);
+});
+
+
+                card.appendChild(removeButton);
+                card.appendChild(iframeContainer);
+                contentGrid.appendChild(card);
+            }
+
+    function removeLink(url) {
+      const links = JSON.parse(localStorage.getItem(LS_KEY)) || [];
+      const updatedLinks = links.filter(link => link !== url);
+      localStorage.setItem(LS_KEY, JSON.stringify(updatedLinks));
+    }
+
+    function loadSavedLinks() {
+      const links = JSON.parse(localStorage.getItem(LS_KEY)) || [];
+      links.forEach(url => {
+        const embedHtml = generateEmbedHtml(url);
+        if (embedHtml) addContentToGrid(url, embedHtml);
+      });
+    }
+
+    function changeChat() {
+      const channel = chatSelect.value;
+      if (!channel) return;
+      const parent = location.hostname || 'localhost';
+      chatContainer.innerHTML = `<iframe src="https://www.twitch.tv/embed/${channel}/chat?parent=${parent}&theme=dark" allowfullscreen></iframe>`;
+    }
+
+function toggleChat() {
+  const isHidden = chatPanel.classList.contains('hidden');
+  if (isHidden) {
+    chatPanel.classList.remove('hidden');
+    document.getElementById('showChatBtn').style.display = 'none';
+  } else {
+    chatPanel.classList.add('hidden');
+    document.getElementById('showChatBtn').style.display = 'block';
+  }
+}
+
+document.getElementById('showChatBtn').addEventListener('click', () => {
+  toggleChat(); // Reexibe o chat
+});
+
+
+    loadSavedLinks();
+  </script>
+</body>
+</html>
