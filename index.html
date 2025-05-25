@@ -267,37 +267,49 @@ function toggleOverlay(forceShow = null) {
       }
     }
 
-    function generateEmbedHtml(url) {
-      const twitchMatch = url.match(/twitch\.tv\/(\w+)/);
-      if (twitchMatch) {
-        const channel = twitchMatch[1];
-        const parent = location.hostname || 'localhost';
+function generateEmbedHtml(url) {
+  const twitchMatch = url.match(/twitch\.tv\/(\w+)/);
+  if (twitchMatch) {
+    const channel = twitchMatch[1];
+    const parent = location.hostname || 'localhost';
 
-        if (location.protocol === 'file:') {
-          twitchFileProtocolWarningShown = true;
-          alert("Abra em um servidor local (Live Server, etc) para Twitch funcionar.");
-          return null;
-        }
-
-        if (!twitchChannels.includes(channel)) {
-          twitchChannels.push(channel);
-          const opt = document.createElement('option');
-          opt.value = channel;
-          opt.textContent = channel;
-          chatSelect.appendChild(opt);
-        }
-
-        return `<div class="iframe-container"><iframe src="https://player.twitch.tv/?channel=${channel}&parent=${parent}&theme=dark" allowfullscreen></iframe></div>`;
-      }
-
-      const youtubeMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([\w-]{11})/);
-      if (youtubeMatch) {
-        const videoId = youtubeMatch[1];
-        return `<div class="iframe-container"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
-      }
-
+    if (location.protocol === 'file:') {
+      twitchFileProtocolWarningShown = true;
+      alert("Abra em um servidor local (Live Server, etc) para Twitch funcionar.");
       return null;
     }
+
+    if (!twitchChannels.includes(channel)) {
+      twitchChannels.push(channel);
+      const opt = document.createElement('option');
+      opt.value = channel;
+      opt.textContent = channel;
+      chatSelect.appendChild(opt);
+    }
+
+    return `<div class="iframe-container"><iframe src="https://player.twitch.tv/?channel=${channel}&parent=${parent}&theme=dark" allowfullscreen></iframe></div>`;
+  }
+
+  const youtubeMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([\w-]{11})/);
+  if (youtubeMatch) {
+    const videoId = youtubeMatch[1];
+    return `<div class="iframe-container"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
+  }
+
+  const kickMatch = url.match(/kick\.com\/(\w+)/);
+  if (kickMatch) {
+    const channel = kickMatch[1];
+    return `<div class="iframe-container"><iframe src="https://kick.com/embed/${channel}" allowfullscreen></iframe></div>`;
+  }
+
+  const locoMatch = url.match(/loco\.tv\/(\w+)/);
+  if (locoMatch) {
+    const channel = locoMatch[1];
+    return `<div class="iframe-container"><iframe src="https://player.loco.tv/player/${channel}" allowfullscreen></iframe></div>`;
+  }
+
+  return null;
+}
 
 
     function saveLink(url) {
