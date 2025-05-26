@@ -299,7 +299,7 @@ function generateEmbedHtml(url) {
   const kickMatch = url.match(/kick\.com\/(\w+)/);
   if (kickMatch) {
     const channel = kickMatch[1];
-    return `<div class="iframe-container"><iframe src="https://kick.com/embed/${channel}?autoplay=true" allowfullscreen></iframe></div>`;
+    return `<div class="iframe-container"><iframe src="https://player.kick.com/${channel}" allowfullscreen></iframe></div>`;
   }
 
   // Loco não suportado no momento
