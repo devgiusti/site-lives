@@ -4,41 +4,83 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
-  <title>MultiVPlayers</title>
+  <title>MultiVPlayers - AI Edition</title>
   <style>
+    /* --- Estilos Gerais (Dark Theme Profissional) --- */
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       display: flex;
       height: 100vh;
       overflow: hidden;
+      background-color: #050505;
+      color: #e0e0e0;
     }
 
+    /* --- Aviso de Protocolo FILE --- */
+    #fileProtocolWarning {
+        display: none;
+        background-color: #aa0000;
+        color: white;
+        padding: 10px;
+        text-align: center;
+        font-weight: bold;
+        position: fixed;
+        top: 0; left: 0; width: 100%;
+        z-index: 9999;
+        font-size: 14px;
+    }
+
+    /* --- Área de Mosaico --- */
     .video-area {
       flex: 1;
       display: flex;
       flex-wrap: wrap;
       align-content: flex-start;
-      padding: 10px;
-      gap: 10px;
+      padding: 15px;
+      gap: 15px;
       overflow-y: auto;
-      background-color: #121212;
+      background-color: #0a0a0a;
+      margin-top: 0; /* Ajustado via JS se houver aviso */
     }
 
+    /* Scrollbar estilizada */
+    .video-area::-webkit-scrollbar { width: 8px; }
+    .video-area::-webkit-scrollbar-track { background: #000; }
+    .video-area::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+    .video-area::-webkit-scrollbar-thumb:hover { background: #555; }
+
     .content-card {
-      flex: 0 0 49%;
+      flex: 0 0 49%; /* 2 colunas padrão */
       max-width: 49%;
       background-color: #000;
       position: relative;
+      border: 1px solid #222;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.2s;
     }
+    
+    .content-card:hover { border-color: #444; }
 
-    .iframe-container {
+    @media (min-width: 1600px) { .content-card { flex: 0 0 32.5%; max-width: 32.5%; } }
+    @media (max-width: 768px) { .content-card { flex: 0 0 100%; max-width: 100%; } }
+
+    /* --- Container do Iframe --- */
+    .iframe-wrapper {
       position: relative;
-      padding-bottom: 56.25%;
-      height: 0;
+      width: 100%;
+      padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+      background: #000;
+      flex-grow: 1;
     }
 
-    .iframe-container iframe {
+    .iframe-wrapper iframe, 
+    .iframe-wrapper object, 
+    .iframe-wrapper embed {
       position: absolute;
       top: 0;
       left: 0;
@@ -47,387 +89,816 @@
       border: none;
     }
 
-    .remove-btn {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      background: red;
-      color: white;
-      border-radius: 10px;
-      padding: 5px;
-      cursor: pointer;
-      z-index: 2;
+    /* --- Barra de Ferramentas do Cartão (Overlay) --- */
+    .card-header-overlay {
+        position: absolute;
+        top: 0; left: 0; width: 100%;
+        height: 40px;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+        z-index: 20;
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-start;
+        padding: 5px;
+        box-sizing: border-box;
+        pointer-events: none; /* Deixa clicar no video através da barra vazia */
     }
 
+    .content-card:hover .card-header-overlay { opacity: 1; }
+
+    .btn-group {
+        display: flex;
+        gap: 5px;
+        pointer-events: auto; /* Reativa cliques nos botões */
+    }
+
+    .btn-icon {
+        background: rgba(20, 20, 20, 0.9);
+        color: #fff;
+        border: 1px solid #444;
+        border-radius: 4px;
+        width: 28px;
+        height: 28px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+    .btn-icon:hover { background: #9146ff; border-color: #9146ff; }
+    .btn-remove:hover { background: #d32f2f; border-color: #d32f2f; }
+
+    /* --- Chat Panel (Direita) --- */
     .chat-panel {
-      width: 350px;
+      width: 360px;
       max-width: 100%;
-      background-color: #000;
+      background-color: #111;
       display: flex;
       flex-direction: column;
-      border-left: 2px solid #333;
+      border-left: 1px solid #222;
+      transition: margin-right 0.3s ease;
+      z-index: 50;
+    }
+    
+    .chat-panel.hidden {
+        margin-right: -360px; /* Esconde deslizando */
+        display: flex !important; /* Mantém no DOM para não recarregar iframe */
     }
 
     .chat-header {
       padding: 10px;
-      background-color: #242424;
-      color: #fff;
+      background-color: #1a1a1a;
+      border-bottom: 1px solid #333;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
 
     .chat-select {
       flex-grow: 1;
-      margin-left: 10px;
-      background-color: #181818;
-      color: white;
+      background-color: #2a2a2a;
+      color: #fff;
       border: 1px solid #444;
-      padding: 5px;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 13px;
+      outline: none;
     }
+    .chat-select:focus { border-color: #9146ff; }
 
     .chat-container {
       flex-grow: 1;
+      position: relative;
+      background: #0e0e0e;
+    }
+    
+    .chat-placeholder {
+        display:flex; flex-direction:column; justify-content:center; align-items:center; 
+        height:100%; color:#666; text-align: center; padding: 20px; font-size: 14px;
     }
 
-    .chat-container iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
+    /* --- Botões Flutuantes (FAB) --- */
+    .fab-container {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        z-index: 100;
+        align-items: flex-end;
     }
 
     .fab {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background-color: #6200ee;
+      background-color: #9146ff;
       color: white;
       border: none;
       border-radius: 50%;
-      width: 56px;
-      height: 56px;
-      font-size: 24px;
+      width: 60px;
+      height: 60px;
+      font-size: 30px;
       cursor: pointer;
-      z-index: 999;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      transition: transform 0.2s, background-color 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .fab:hover { background-color: #a970ff; transform: scale(1.05); }
+    .fab.active { background-color: #ff4f4f; transform: rotate(45deg); }
+
+    .fab-mini {
+        width: 45px; height: 45px;
+        border-radius: 50%;
+        background-color: #333;
+        color: white;
+        border: 1px solid #444;
+        cursor: pointer;
+        font-size: 18px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        display: flex; align-items: center; justify-content: center;
+        transition: 0.2s;
+    }
+    .fab-mini:hover { background-color: #555; }
+    
+    /* Estilo Especial para o botão AI */
+    .fab-ai {
+        background: linear-gradient(135deg, #4285f4, #9b72cb, #d96570);
+        border: none;
+        font-size: 20px;
+        animation: pulse-glow 3s infinite;
+    }
+    
+    @keyframes pulse-glow {
+        0% { box-shadow: 0 0 0 0 rgba(155, 114, 203, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(155, 114, 203, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(155, 114, 203, 0); }
     }
 
-        /* Painel de Adição de URL (Overlay) */
-        .url-input-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--overlay-bg);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 999;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0s linear 0.3s;
-        }
+    /* --- Modal Genérico --- */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.9);
+      backdrop-filter: blur(4px);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 999;
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.2s;
+    }
+    .modal-overlay.visible { opacity: 1; visibility: visible; }
 
-        .url-input-overlay.visible {
-            opacity: 1;
-            visibility: visible;
-            transition-delay: 0s;
-        }
+    .modal-panel {
+      background-color: #181818;
+      padding: 30px;
+      border-radius: 12px;
+      border: 1px solid #333;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+      width: 90%; max-width: 600px;
+      display: flex; flex-direction: column; gap: 15px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
 
-        .url-input-panel {
-            background-color: var(--secondary-bg);
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            width: 90%;
-            max-width: 500px;
-        }
+    .modal-panel h2 { margin: 0; font-size: 22px; color: #fff; }
+    
+    .input-group input {
+      padding: 15px;
+      background-color: #252525;
+      border: 1px solid #444;
+      color: white;
+      border-radius: 6px;
+      font-size: 16px;
+      outline: none;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .input-group input:focus { border-color: #9146ff; background-color: #2a2a2a; }
 
-        .url-input-panel input[type="url"] {
-            padding: 12px;
-            border: 1px solid var(--card-border);
-            background-color: var(--tertiary-bg);
-            color: var(--primary-text);
-            border-radius: 5px;
-            font-size: 16px;
-        }
-         .url-input-panel input[type="url"]::placeholder {
-            color: #888;
-        }
+    .primary-btn {
+      padding: 15px;
+      background-color: #9146ff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .primary-btn:hover { background-color: #a970ff; }
+    .primary-btn:disabled { background-color: #555; cursor: not-allowed; }
 
+    /* --- Estilos do Painel IA --- */
+    .ai-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #333;
+        padding-bottom: 10px;
+    }
+    .ai-tab {
+        background: transparent;
+        border: none;
+        color: #888;
+        cursor: pointer;
+        padding: 8px 16px;
+        font-weight: bold;
+        border-radius: 4px;
+        transition: 0.2s;
+    }
+    .ai-tab.active {
+        background: rgba(155, 114, 203, 0.2);
+        color: #d96570;
+    }
+    .ai-tab:hover { color: #fff; }
 
-        .url-input-panel button {
-            padding: 12px;
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
-        }
+    .ai-content { display: none; }
+    .ai-content.active { display: block; }
 
-        .url-input-panel button:hover {
-            background-color: #0056b3;
-        }
-
-    .hidden {
-      display: none !important;
+    .gemini-chat-box {
+        background: #0f0f0f;
+        border: 1px solid #333;
+        border-radius: 8px;
+        height: 300px;
+        overflow-y: auto;
+        padding: 15px;
+        margin-bottom: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .chat-msg {
+        padding: 8px 12px;
+        border-radius: 8px;
+        max-width: 80%;
+        line-height: 1.4;
+        font-size: 14px;
+    }
+    .chat-msg.user {
+        background: #2a2a2a;
+        align-self: flex-end;
+        color: #fff;
+    }
+    .chat-msg.ai {
+        background: rgba(66, 133, 244, 0.2);
+        align-self: flex-start;
+        color: #e0e0e0;
+        border: 1px solid rgba(66, 133, 244, 0.3);
+    }
+    .loading-dots:after {
+        content: ' .';
+        animation: dots 1s steps(5, end) infinite;
+    }
+    @keyframes dots {
+        0%, 20% { content: ' .'; }
+        40% { content: ' ..'; }
+        60% { content: ' ...'; }
+        80%, 100% { content: ''; }
     }
 
   </style>
 </head>
 <body>
+
+  <!-- Aviso de Erro Crítico -->
+  <div id="fileProtocolWarning">
+      ⚠️ ERRO: Você abriu este arquivo diretamente do PC. A Twitch BLOQUEIA isso. 
+      Use um servidor local (como "Live Server" no VSCode) ou hospede o site para funcionar.
+  </div>
+
+  <!-- Área Principal -->
   <div class="video-area" id="contentGrid"></div>
 
+  <!-- Painel Lateral de Chat -->
   <div class="chat-panel" id="chatPanel">
     <div class="chat-header">
-      <button onclick="toggleChat()" id="toggleChatBtn">Ocultar</button>
-      <select id="chatSelect" class="chat-select" onchange="changeChat()">
-        <option disabled selected>Selecione o chat</option>
-      </select>
+      <strong>Chats</strong>
+      <button onclick="toggleChat()" title="Ocultar" style="background:none; border:none; color:#bbb; cursor:pointer;">&#10005;</button>
     </div>
-    <div class="chat-container" id="chatContainer"></div>
+    
+    <div style="padding: 10px; background: #1a1a1a;">
+        <select id="chatSelect" class="chat-select" onchange="changeChat()">
+            <option value="" disabled selected>Selecione um canal...</option>
+        </select>
+    </div>
+
+    <div class="chat-container" id="chatContainer">
+        <div class="chat-placeholder">
+            <p>Selecione um canal acima para carregar o chat.</p>
+        </div>
+    </div>
   </div>
 
-  <button class="fab" id="fab">+</button>
+  <!-- Botões Flutuantes -->
+  <div class="fab-container">
+      <button class="fab-mini fab-ai" id="aiFab" title="Recursos IA (Gemini)">✨</button>
+      <button class="fab-mini" id="toggleChatFab" title="Alternar Chat">💬</button>
+      <button class="fab" id="fab" title="Adicionar Manualmente">+</button>
+  </div>
 
-  <div class="url-input-overlay" id="urlInputOverlay">
-    <div class="url-input-panel" style="background-color: black; color: white; padding: 30px; border-radius: 10px;">
-      <input type="url" id="urlInput" placeholder="Cole o URL da live/vídeo aqui">
-      <button id="addUrlButton">Adicionar</button>
+  <!-- Modal de Input Manual -->
+  <div class="modal-overlay" id="urlInputOverlay">
+    <div class="modal-panel url-input-panel">
+      <h2>Adicionar Conteúdo</h2>
+      <p style="color:#aaa; font-size:14px; margin-top:-10px;">Suporta Twitch, YouTube, Kick e sites genéricos.</p>
+      
+      <div class="input-group">
+        <input type="text" id="urlInput" placeholder="Cole a URL ou código HTML aqui..." autocomplete="off">
+      </div>
+      
+      <button class="primary-btn" id="addUrlButton">Adicionar ao Mosaico</button>
+      
+      <div style="background: #222; padding: 10px; border-radius: 6px; font-size: 12px; color: #888;">
+          <strong>Dica:</strong> Se um site não carregar (tela branca/triste), clique no ícone <span style="font-family:monospace;">&#8599;</span> no card para abrir externamente.
+      </div>
     </div>
   </div>
 
-  <button class="fab" id="showChatBtn" style="display: none; right: 90px;">💬</button>
+  <!-- Modal IA (Gemini) -->
+  <div class="modal-overlay" id="aiOverlay">
+    <div class="modal-panel">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h2>MultiVPlayers AI ✨</h2>
+          <button id="closeAiBtn" style="background:none; border:none; color:#fff; cursor:pointer; font-size:20px;">&times;</button>
+      </div>
+      
+      <!-- API Key Section -->
+      <div id="apiKeySection" style="background:#222; padding:10px; border-radius:6px; font-size:13px; margin-bottom:10px;">
+          <div style="display:flex; gap:10px; align-items:center;">
+              <span style="color:#aaa;">Gemini API Key:</span>
+              <input type="password" id="apiKeyInput" placeholder="Cole sua chave aqui..." style="background:#111; border:1px solid #444; color:white; padding:5px; border-radius:4px; flex-grow:1;">
+              <button id="saveKeyBtn" style="background:#444; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Salvar</button>
+          </div>
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#4285f4; font-size:11px; text-decoration:none; margin-top:5px; display:inline-block;">Obter Chave Grátis</a>
+      </div>
 
+      <div class="ai-tabs">
+          <button class="ai-tab active" onclick="switchTab('mosaic')">Mosaico Mágico</button>
+          <button class="ai-tab" onclick="switchTab('copilot')">Co-Piloto Gamer</button>
+      </div>
+
+      <!-- Tab 1: Mosaico Mágico -->
+      <div id="tab-mosaic" class="ai-content active">
+          <p style="color:#ccc; font-size:14px;">Descreva o que você quer assistir e a IA montará o mosaico para você.</p>
+          <div class="input-group">
+            <input type="text" id="aiMosaicPrompt" placeholder="Ex: '4 streams de Valorant' ou 'Ambiente relaxante com chuva'" autocomplete="off">
+          </div>
+          <button class="primary-btn" id="generateMosaicBtn" style="margin-top:15px; width:100%;">✨ Gerar Mosaico</button>
+          <div id="mosaicStatus" style="margin-top:10px; font-size:13px; color:#aaa; font-style:italic;"></div>
+      </div>
+
+      <!-- Tab 2: Co-Piloto -->
+      <div id="tab-copilot" class="ai-content">
+          <div class="gemini-chat-box" id="aiChatBox">
+              <div class="chat-msg ai">Olá! Sou seu assistente gamer. Pergunte sobre o jogo que está assistindo, estratégias ou peça recomendações!</div>
+          </div>
+          <div style="display:flex; gap:10px;">
+              <input type="text" id="aiChatInput" placeholder="Pergunte algo..." style="flex-grow:1; padding:10px; border-radius:6px; border:1px solid #444; background:#222; color:white;">
+              <button id="aiChatSend" style="padding:0 15px; background:#4285f4; color:white; border:none; border-radius:6px; cursor:pointer;">➤</button>
+          </div>
+      </div>
+
+    </div>
+  </div>
 
   <script>
-    const fab = document.getElementById('fab');
-    const urlInputOverlay = document.getElementById('urlInputOverlay');
-    const urlInput = document.getElementById('urlInput');
-    const addUrlButton = document.getElementById('addUrlButton');
-    const contentGrid = document.getElementById('contentGrid');
-    const chatSelect = document.getElementById('chatSelect');
-    const chatContainer = document.getElementById('chatContainer');
-    const chatPanel = document.getElementById('chatPanel');
-    const toggleChatBtn = document.getElementById('toggleChatBtn');
+    // --- Configurações e Estado ---
+    const LS_KEY = 'multiVPlayers_final_data';
+    const API_KEY_LS = 'gemini_api_key';
+    let twitchChannels = [];
+    let currentHostname = window.location.hostname;
+    // IMPORTANTE: Se rodar localmente, o usuário deve inserir a chave.
+    // Se estiver no ambiente de preview, a variável apiKey pode vir preenchida, mas aqui usamos vazio por segurança.
+    const systemApiKey = ""; 
+    
+    // --- Diagnóstico de Ambiente ---
+    if (!currentHostname) {
+        document.getElementById('fileProtocolWarning').style.display = 'block';
+        document.querySelector('.video-area').style.marginTop = '40px';
+        currentHostname = 'localhost';
+    }
 
-    const LS_KEY = 'mosaicContentLinks';
-    let twitchFileProtocolWarningShown = false;
-    const twitchChannels = [];
+    // --- Referências DOM ---
+    const els = {
+        fab: document.getElementById('fab'),
+        chatFab: document.getElementById('toggleChatFab'),
+        aiFab: document.getElementById('aiFab'),
+        
+        overlay: document.getElementById('urlInputOverlay'),
+        aiOverlay: document.getElementById('aiOverlay'),
+        
+        input: document.getElementById('urlInput'),
+        addBtn: document.getElementById('addUrlButton'),
+        
+        grid: document.getElementById('contentGrid'),
+        chatPanel: document.getElementById('chatPanel'),
+        chatSelect: document.getElementById('chatSelect'),
+        chatContainer: document.getElementById('chatContainer'),
 
-    fab.addEventListener('click', () => toggleOverlay());
+        // AI Elements
+        apiKeyInput: document.getElementById('apiKeyInput'),
+        saveKeyBtn: document.getElementById('saveKeyBtn'),
+        mosaicPrompt: document.getElementById('aiMosaicPrompt'),
+        generateBtn: document.getElementById('generateMosaicBtn'),
+        mosaicStatus: document.getElementById('mosaicStatus'),
+        chatBox: document.getElementById('aiChatBox'),
+        chatInput: document.getElementById('aiChatInput'),
+        chatSend: document.getElementById('aiChatSend'),
+        closeAiBtn: document.getElementById('closeAiBtn')
+    };
 
-    urlInputOverlay.addEventListener('click', (event) => {
-      if (event.target === urlInputOverlay) toggleOverlay(false);
+    // --- Inicialização ---
+    window.addEventListener('DOMContentLoaded', () => {
+        loadData();
+        loadApiKey();
     });
 
-    addUrlButton.addEventListener('click', handleAddUrl);
-    urlInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleAddUrl());
+    // --- Event Listeners Básicos ---
+    els.fab.onclick = () => toggleOverlay(els.overlay, true);
+    els.overlay.onclick = (e) => { if(e.target === els.overlay) toggleOverlay(els.overlay, false); };
+    
+    els.aiFab.onclick = () => toggleOverlay(els.aiOverlay, true);
+    els.aiOverlay.onclick = (e) => { if(e.target === els.aiOverlay) toggleOverlay(els.aiOverlay, false); };
+    els.closeAiBtn.onclick = () => toggleOverlay(els.aiOverlay, false);
 
-function toggleOverlay(forceShow = null) {
-  const isActive = fab.classList.contains('active');
-  const shouldShow = forceShow === true || (forceShow === null && !isActive);
+    els.addBtn.onclick = processManualInput;
+    els.input.onkeypress = (e) => { if(e.key === 'Enter') processManualInput(); };
+    els.chatFab.onclick = toggleChat;
 
-  urlInputOverlay.classList.toggle('visible', shouldShow);
-  fab.classList.toggle('active', shouldShow);
-  fab.textContent = shouldShow ? '×' : '+';
+    // AI Listeners
+    els.saveKeyBtn.onclick = saveApiKey;
+    els.generateBtn.onclick = handleMagicMosaic;
+    els.chatSend.onclick = handleAiChat;
+    els.chatInput.onkeypress = (e) => { if(e.key === 'Enter') handleAiChat(); };
 
-  if (shouldShow) {
-    urlInput.focus();
-  }
-}
+    // --- Controle de UI ---
+    function toggleOverlay(overlayElement, show) {
+        overlayElement.classList.toggle('visible', show);
+        if (show && overlayElement === els.overlay) els.input.focus();
+    }
 
-    function handleAddUrl() {
-      const url = urlInput.value.trim();
-      if (!isValidHttpUrl(url)) return alert("URL inválida. Use http:// ou https://");
+    function toggleChat() {
+        els.chatPanel.classList.toggle('hidden');
+    }
 
-      const embedHtml = generateEmbedHtml(url);
-      if (embedHtml) {
-        addContentToGrid(url, embedHtml);
-        saveLink(url);
-        urlInput.value = '';
-        toggleOverlay(false);
-      } else {
-        if (!twitchFileProtocolWarningShown || !url.includes('twitch.tv')) {
-          alert("Plataforma não suportada ou embed inválido.");
+    function switchTab(tabName) {
+        document.querySelectorAll('.ai-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.ai-content').forEach(c => c.classList.remove('active'));
+        
+        document.querySelector(`.ai-tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+    }
+
+    // --- Lógica Manual ---
+    function processManualInput() {
+        let rawInput = els.input.value.trim();
+        if (!rawInput) return;
+        processUrl(rawInput);
+        els.input.value = '';
+        toggleOverlay(els.overlay, false);
+    }
+
+    function processUrl(rawInput) {
+        if (!rawInput.startsWith('http') && !rawInput.startsWith('<iframe') && !rawInput.startsWith('<embed')) {
+            rawInput = 'https://' + rawInput;
         }
-      }
+
+        const embedData = generateEmbed(rawInput);
+        if (embedData) {
+            createCard(rawInput, embedData);
+            saveData(rawInput);
+            return true;
+        } else {
+            alert('URL inválida ou não suportada.');
+            return false;
+        }
     }
 
-    function isValidHttpUrl(string) {
-      try {
-        const url = new URL(string);
-        return url.protocol === "http:" || url.protocol === "https:";
-      } catch (_) {
-        return false;
-      }
+    // --- GEMINI AI LOGIC ---
+
+    function getApiKey() {
+        // Retorna a chave do input ou do localStorage ou a do sistema
+        let k = els.apiKeyInput.value.trim();
+        if(!k) k = localStorage.getItem(API_KEY_LS);
+        if(!k) k = systemApiKey;
+        return k;
     }
 
-function generateEmbedHtml(url) {
-  const twitchMatch = url.match(/twitch\.tv\/(\w+)/);
-  if (twitchMatch) {
-    const channel = twitchMatch[1];
-    const parent = location.hostname || 'localhost';
-
-    if (location.protocol === 'file:') {
-      twitchFileProtocolWarningShown = true;
-      alert("Abra em um servidor local (Live Server, etc) para Twitch funcionar.");
-      return null;
+    function loadApiKey() {
+        const k = localStorage.getItem(API_KEY_LS);
+        if(k) els.apiKeyInput.value = k;
     }
 
-    if (!twitchChannels.includes(channel)) {
-      twitchChannels.push(channel);
-      const opt = document.createElement('option');
-      opt.value = channel;
-      opt.textContent = channel;
-      chatSelect.appendChild(opt);
+    function saveApiKey() {
+        const k = els.apiKeyInput.value.trim();
+        if(k) {
+            localStorage.setItem(API_KEY_LS, k);
+            alert('Chave API salva!');
+        }
     }
 
-    return `<div class="iframe-container"><iframe src="https://player.twitch.tv/?channel=${channel}&parent=${parent}&theme=dark" allowfullscreen></iframe></div>`;
-  }
+    async function callGemini(payload) {
+        const key = getApiKey();
+        if (!key) throw new Error("Por favor, insira sua Gemini API Key nas configurações acima.");
 
-  const youtubeMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([\w-]{11})/);
-  if (youtubeMatch) {
-    const videoId = youtubeMatch[1];
-    return `<div class="iframe-container"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
-  }
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`;
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
-  const kickMatch = url.match(/kick\.com\/(\w+)/);
-  if (kickMatch) {
-    const channel = kickMatch[1];
-    return `<div class="iframe-container"><iframe src="https://player.kick.com/${channel}" allowfullscreen></iframe></div>`;
-  }
-
-  // Loco não suportado no momento
-  return null;
-}
-
-
-
-    function saveLink(url) {
-      const links = JSON.parse(localStorage.getItem(LS_KEY)) || [];
-      if (!links.includes(url)) {
-        links.push(url);
-        localStorage.setItem(LS_KEY, JSON.stringify(links));
-      }
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error?.message || 'Erro na API Gemini');
+        }
+        return await response.json();
     }
 
-            function addContentToGrid(originalUrl, embedHtml) {
-                const card = document.createElement('div');
-                card.classList.add('content-card');
-                card.dataset.url = originalUrl; // Guardar o URL original para referência
+    // --- Funcionalidade 1: Mosaico Mágico ---
+    async function handleMagicMosaic() {
+        const prompt = els.mosaicPrompt.value.trim();
+        if (!prompt) return;
 
-                const iframeContainer = document.createElement('div');
-                iframeContainer.classList.add('iframe-container');
-                iframeContainer.innerHTML = embedHtml;
-                
-                // Botão de remover (opcional, mas útil)
-                const removeButton = document.createElement('button');
-                removeButton.innerHTML = '&times;';
-                removeButton.title = 'Remover este item';
-                removeButton.style.position = 'absolute';
-                removeButton.style.top = '5px';
-                removeButton.style.right = '5px';
-                removeButton.style.zIndex = '10';
-                removeButton.style.background = 'rgba(0,0,0,0.5)';
-                removeButton.style.color = 'white';
-                removeButton.style.border = 'none';
-                removeButton.style.borderRadius = '50%';
-                removeButton.style.width = '24px';
-                removeButton.style.height = '24px';
-                removeButton.style.fontSize = '16px';
-                removeButton.style.lineHeight = '24px';
-                removeButton.style.textAlign = 'center';
-                removeButton.style.cursor = 'pointer';
-                removeButton.style.opacity = '0.7';
-                removeButton.onmouseover = () => removeButton.style.opacity = '1';
-                removeButton.onmouseout = () => removeButton.style.opacity = '0.7';
+        els.generateBtn.disabled = true;
+        els.mosaicStatus.innerHTML = "Pesquisando vídeos e gerando mosaico... <span class='loading-dots'></span>";
 
-function removeChatOption(url) {
-  // Extrair o canal Twitch do URL (se existir)
-  const twitchMatch = url.match(/twitch\.tv\/(\w+)/);
-  if (!twitchMatch) return;
+        try {
+            // Usamos Google Search Grounding para encontrar links reais
+            const payload = {
+                contents: [{ 
+                    parts: [{ 
+                        text: `Encontre 3 ou 4 vídeos ou transmissões ao vivo (YouTube ou Twitch) reais e que funcionem sobre: "${prompt}". 
+                        Retorne APENAS um Array JSON contendo as URLs completas. Exemplo: ["https://youtube.com/watch?v=...", "https://twitch.tv/..."]. 
+                        Não explique nada, apenas o JSON.` 
+                    }] 
+                }],
+                tools: [{ "google_search": {} }] 
+            };
 
-  const channel = twitchMatch[1];
+            const data = await callGemini(payload);
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            
+            // Tenta extrair o JSON do texto (caso venha com markdown ```json ...)
+            let jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            let urls = JSON.parse(jsonStr);
 
-  // Remover do array de canais
-  const index = twitchChannels.indexOf(channel);
-  if (index !== -1) {
-    twitchChannels.splice(index, 1);
-  }
-
-  // Remover do select
-  const options = Array.from(chatSelect.options);
-  for (const option of options) {
-    if (option.value === channel) {
-      chatSelect.removeChild(option);
-    }
-  }
-
-  // Se o chat atual estiver aberto e for do canal removido, limpar chat
-  if (chatSelect.value === channel) {
-    chatSelect.value = ''; // Reseta o select
-    chatContainer.innerHTML = ''; // Remove o iframe do chat
-  }
-}
-
-
-removeButton.addEventListener('click', (e) => {
-  e.stopPropagation();
-  contentGrid.removeChild(card);
-  removeLink(originalUrl);
-  removeChatOption(originalUrl);
-});
-
-
-                card.appendChild(removeButton);
-                card.appendChild(iframeContainer);
-                contentGrid.appendChild(card);
+            if (Array.isArray(urls)) {
+                let addedCount = 0;
+                urls.forEach(url => {
+                    if (processUrl(url)) addedCount++;
+                });
+                els.mosaicStatus.innerText = `Sucesso! ${addedCount} vídeos adicionados.`;
+                els.mosaicPrompt.value = '';
+                toggleOverlay(els.aiOverlay, false);
+            } else {
+                throw new Error("Formato de resposta inválido.");
             }
 
-    function removeLink(url) {
-      const links = JSON.parse(localStorage.getItem(LS_KEY)) || [];
-      const updatedLinks = links.filter(link => link !== url);
-      localStorage.setItem(LS_KEY, JSON.stringify(updatedLinks));
+        } catch (e) {
+            console.error(e);
+            els.mosaicStatus.innerText = "Erro: " + e.message;
+        } finally {
+            els.generateBtn.disabled = false;
+        }
     }
 
-    function loadSavedLinks() {
-      const links = JSON.parse(localStorage.getItem(LS_KEY)) || [];
-      links.forEach(url => {
-        const embedHtml = generateEmbedHtml(url);
-        if (embedHtml) addContentToGrid(url, embedHtml);
-      });
+    // --- Funcionalidade 2: Co-Piloto Gamer ---
+    async function handleAiChat() {
+        const msg = els.chatInput.value.trim();
+        if (!msg) return;
+
+        // Add User Message
+        addChatMsg(msg, 'user');
+        els.chatInput.value = '';
+        els.chatInput.focus();
+
+        // Loading
+        const loadingId = addChatMsg("Digitando...", 'ai', true);
+
+        try {
+            const payload = {
+                contents: [{ parts: [{ text: `Você é um assistente gamer útil e amigável. Responda de forma concisa em Português. Pergunta do usuário: ${msg}` }] }]
+            };
+
+            const data = await callGemini(payload);
+            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Não consegui entender.";
+            
+            removeChatMsg(loadingId);
+            addChatMsg(reply, 'ai');
+
+        } catch (e) {
+            removeChatMsg(loadingId);
+            addChatMsg("Erro ao conectar com Gemini: " + e.message, 'ai');
+        }
+    }
+
+    function addChatMsg(text, type, isLoading = false) {
+        const div = document.createElement('div');
+        div.className = `chat-msg ${type} ${isLoading ? 'loading-dots' : ''}`;
+        div.innerText = text;
+        div.id = 'msg-' + Date.now();
+        els.chatBox.appendChild(div);
+        els.chatBox.scrollTop = els.chatBox.scrollHeight;
+        return div.id;
+    }
+
+    function removeChatMsg(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    }
+
+    // --- Lógica de Embed (Do arquivo anterior) ---
+    function generateEmbed(url) {
+        // Lógica mantida do v3 Final para compatibilidade
+        if (url.startsWith('<iframe') || url.startsWith('<embed')) {
+            let cleanHtml = url;
+            if (!cleanHtml.includes('width="100%"')) cleanHtml = cleanHtml.replace(/width=["']?\d+["']?/i, 'width="100%"');
+            if (!cleanHtml.includes('height="100%"')) cleanHtml = cleanHtml.replace(/height=["']?\d+["']?/i, 'height="100%"');
+            return { html: cleanHtml, type: 'custom' };
+        }
+
+        try {
+            const urlObj = new URL(url);
+            const hostname = urlObj.hostname.toLowerCase();
+            const path = urlObj.pathname;
+
+            // TWITCH
+            if (hostname.includes('twitch.tv')) {
+                const parents = new Set(['localhost', '127.0.0.1']);
+                if (currentHostname) parents.add(currentHostname);
+                const parentString = Array.from(parents).map(p => `&parent=${p}`).join('');
+
+                const pathParts = path.split('/').filter(p => p);
+                if (pathParts.length > 0 && !path.includes('/videos/') && !path.includes('/clip/')) {
+                    const channel = pathParts[0];
+                    addChatOption(channel);
+                    return {
+                        html: `<iframe src="https://player.twitch.tv/?channel=${channel}${parentString}&muted=false" allowfullscreen></iframe>`,
+                        type: 'twitch_live',
+                        channel: channel
+                    };
+                }
+                if (path.includes('/videos/')) {
+                    const videoId = path.split('/videos/')[1].split('/')[0];
+                    return { html: `<iframe src="https://player.twitch.tv/?video=${videoId}${parentString}&autoplay=false" allowfullscreen></iframe>` };
+                }
+                if (path.includes('/clip/')) { // Suporte básico a clipes
+                     return { html: `<iframe src="https://clips.twitch.tv/embed?clip=${path.split('/').pop()}${parentString}&autoplay=false" allowfullscreen></iframe>`};
+                }
+            }
+
+            // YOUTUBE
+            if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
+                let videoId = '';
+                if (hostname.includes('youtu.be')) videoId = path.substring(1);
+                else if (path.includes('/embed/')) videoId = path.split('/embed/')[1];
+                else if (path.includes('/shorts/')) videoId = path.split('/shorts/')[1];
+                else videoId = urlObj.searchParams.get('v');
+
+                if (videoId) {
+                    return { html: `<iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>` };
+                }
+            }
+
+            // KICK
+            if (hostname.includes('kick.com')) {
+                const parts = path.split('/').filter(p => p);
+                if (parts.length > 0) {
+                    return { html: `<iframe src="https://player.kick.com/${parts[0]}" allowfullscreen></iframe>` };
+                }
+            }
+
+            // GENÉRICO
+            return {
+                html: `<iframe src="${url}" allowfullscreen referrerpolicy="no-referrer" allow="autoplay; encrypted-media; picture-in-picture; clipboard-write"></iframe>`,
+                type: 'generic'
+            };
+
+        } catch (e) {
+            console.error(e);
+            return null;
+        }
+    }
+
+    function createCard(url, embedData) {
+        const card = document.createElement('div');
+        card.className = 'content-card';
+        card.dataset.url = url;
+
+        const header = document.createElement('div');
+        header.className = 'card-header-overlay';
+        
+        const btnGroup = document.createElement('div');
+        btnGroup.className = 'btn-group';
+
+        const refreshBtn = document.createElement('button');
+        refreshBtn.className = 'btn-icon';
+        refreshBtn.innerHTML = '&#8635;';
+        refreshBtn.title = 'Recarregar';
+        refreshBtn.onclick = () => { const iframe = card.querySelector('iframe'); if(iframe) iframe.src = iframe.src; };
+
+        const openBtn = document.createElement('button');
+        openBtn.className = 'btn-icon';
+        openBtn.innerHTML = '&#8599;'; 
+        openBtn.title = 'Abrir no navegador';
+        openBtn.onclick = () => window.open(url, '_blank');
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'btn-icon btn-remove';
+        closeBtn.innerHTML = '&#10005;';
+        closeBtn.title = 'Remover';
+        closeBtn.onclick = () => {
+            removeData(url);
+            if(embedData.type === 'twitch_live') removeChatOption(embedData.channel);
+            card.remove();
+        };
+
+        btnGroup.append(refreshBtn, openBtn, closeBtn);
+        header.appendChild(btnGroup);
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'iframe-wrapper';
+        wrapper.innerHTML = embedData.html;
+
+        card.appendChild(header);
+        card.appendChild(wrapper);
+        els.grid.appendChild(card);
+    }
+
+    function addChatOption(channel) {
+        if (!twitchChannels.includes(channel)) {
+            twitchChannels.push(channel);
+            renderChatOptions();
+            if (twitchChannels.length === 1) {
+                els.chatSelect.value = channel;
+                changeChat();
+            }
+        }
+    }
+
+    function removeChatOption(channel) {
+        twitchChannels = twitchChannels.filter(c => c !== channel);
+        renderChatOptions();
+        if (els.chatSelect.value === channel) {
+            els.chatSelect.value = "";
+            changeChat();
+        }
+    }
+
+    function renderChatOptions() {
+        const current = els.chatSelect.value;
+        while (els.chatSelect.options.length > 1) els.chatSelect.remove(1);
+        twitchChannels.forEach(ch => {
+            const opt = document.createElement('option');
+            opt.value = ch;
+            opt.textContent = ch;
+            els.chatSelect.appendChild(opt);
+        });
+        if (twitchChannels.includes(current)) els.chatSelect.value = current;
     }
 
     function changeChat() {
-      const channel = chatSelect.value;
-      if (!channel) return;
-      const parent = location.hostname || 'localhost';
-      chatContainer.innerHTML = `<iframe src="https://www.twitch.tv/embed/${channel}/chat?parent=${parent}&theme=dark" allowfullscreen></iframe>`;
+        const channel = els.chatSelect.value;
+        if (channel) {
+            const parents = new Set(['localhost', '127.0.0.1']);
+            if (currentHostname) parents.add(currentHostname);
+            const parentString = Array.from(parents).map(p => `&parent=${p}`).join('');
+            els.chatContainer.innerHTML = `<iframe src="https://www.twitch.tv/embed/${channel}/chat?darkpopout${parentString}" width="100%" height="100%" frameborder="0"></iframe>`;
+        } else {
+            els.chatContainer.innerHTML = `<div class="chat-placeholder"><p>Selecione um canal.</p></div>`;
+        }
     }
 
-function toggleChat() {
-  const isHidden = chatPanel.classList.contains('hidden');
-  if (isHidden) {
-    chatPanel.classList.remove('hidden');
-    document.getElementById('showChatBtn').style.display = 'none';
-  } else {
-    chatPanel.classList.add('hidden');
-    document.getElementById('showChatBtn').style.display = 'block';
-  }
-}
+    function saveData(url) {
+        const data = JSON.parse(localStorage.getItem(LS_KEY)) || [];
+        if (!data.includes(url)) {
+            data.push(url);
+            localStorage.setItem(LS_KEY, JSON.stringify(data));
+        }
+    }
 
-document.getElementById('showChatBtn').addEventListener('click', () => {
-  toggleChat(); // Reexibe o chat
-});
+    function removeData(url) {
+        let data = JSON.parse(localStorage.getItem(LS_KEY)) || [];
+        data = data.filter(u => u !== url);
+        localStorage.setItem(LS_KEY, JSON.stringify(data));
+    }
 
-
-    loadSavedLinks();
+    function loadData() {
+        const data = JSON.parse(localStorage.getItem(LS_KEY)) || [];
+        data.forEach(url => {
+            const embedData = generateEmbed(url);
+            if (embedData) createCard(url, embedData);
+        });
+    }
   </script>
 </body>
 </html>
