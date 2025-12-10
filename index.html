@@ -14,6 +14,7 @@
       --text-color: #e0e0e0;
       --accent-color: #9146ff;
       --border-color: #333333;
+      --header-height: 60px;
     }
 
     /* --- Estilos Gerais --- */
@@ -21,6 +22,7 @@
       margin: 0;
       font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       display: flex;
+      flex-direction: column; /* Alterado para coluna para acomodar o header */
       height: 100vh;
       overflow: hidden;
       background-color: var(--bg-color);
@@ -28,18 +30,97 @@
       transition: background-color 0.5s ease, color 0.5s ease;
     }
 
+    /* --- Barra Superior (NOVO) --- */
+    .app-top-bar {
+        height: var(--header-height);
+        background-color: var(--sidebar-bg);
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        z-index: 100;
+        flex-shrink: 0;
+    }
+
+    .app-logo {
+        font-weight: 800;
+        font-size: 1.2rem;
+        background: linear-gradient(90deg, #4285f4, #9b72cb);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-right: 20px;
+    }
+
+    /* Título da Sessão (Movido para o Header) */
+    #sessionTitleHeader {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-color);
+        opacity: 0; /* Começa invisível */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-grow: 1;
+        text-align: center;
+        margin: 0 20px;
+        transition: opacity 0.5s ease;
+    }
+    #sessionTitleHeader.visible { opacity: 1; }
+
+    /* Container de Botões do Header */
+    .header-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    /* Botões da Toolbar (Estilo atualizado) */
+    .toolbar-btn {
+        background-color: rgba(255,255,255,0.05);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        height: 36px;
+        padding: 0 15px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    .toolbar-btn:hover { background-color: rgba(255,255,255,0.1); border-color: var(--text-color); }
+    
+    .btn-primary { background-color: var(--accent-color); color: white; border: none; }
+    .btn-primary:hover { filter: brightness(1.1); background-color: var(--accent-color); }
+    
+    .btn-ai { 
+        background: linear-gradient(135deg, rgba(66, 133, 244, 0.2), rgba(155, 114, 203, 0.2)); 
+        border-color: #9b72cb; 
+        color: #d0bfff;
+    }
+    .btn-ai:hover { background: linear-gradient(135deg, rgba(66, 133, 244, 0.4), rgba(155, 114, 203, 0.4)); color: white; }
+
+
+    /* --- Layout Principal (Abaixo do Header) --- */
+    .main-container {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+    }
+
     /* --- Aviso de Protocolo FILE --- */
     #fileProtocolWarning {
         display: none;
         background-color: #aa0000;
         color: white;
-        padding: 10px;
+        padding: 5px;
         text-align: center;
         font-weight: bold;
-        position: fixed;
-        top: 0; left: 0; width: 100%;
-        z-index: 9999;
-        font-size: 14px;
+        font-size: 12px;
     }
 
     /* --- Área de Mosaico --- */
@@ -48,12 +129,12 @@
       display: flex;
       flex-wrap: wrap;
       align-content: flex-start;
-      padding: 15px;
-      gap: 15px;
+      padding: 10px;
+      gap: 10px;
       overflow-y: auto;
       background-color: var(--bg-color);
       transition: background-color 0.5s ease;
-      margin-top: 0;
+      position: relative;
     }
 
     .video-area::-webkit-scrollbar { width: 8px; }
@@ -61,9 +142,8 @@
     .video-area::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
     .video-area::-webkit-scrollbar-thumb:hover { background: #555; }
 
+    /* O flex-basis agora é controlado via JS (resizeGrid) */
     .content-card {
-      flex: 0 0 49%;
-      max-width: 49%;
       background-color: var(--card-bg);
       position: relative;
       border: 1px solid var(--border-color);
@@ -72,21 +152,18 @@
       box-shadow: 0 10px 20px rgba(0,0,0,0.5);
       display: flex;
       flex-direction: column;
-      transition: all 0.5s ease;
+      transition: all 0.3s ease; 
     }
     
     .content-card:hover { border-color: var(--accent-color); }
-
-    @media (min-width: 1600px) { .content-card { flex: 0 0 32.5%; max-width: 32.5%; } }
-    @media (max-width: 768px) { .content-card { flex: 0 0 100%; max-width: 100%; } }
 
     /* --- Container do Iframe --- */
     .iframe-wrapper {
       position: relative;
       width: 100%;
-      padding-bottom: 56.25%;
       background: #000;
       flex-grow: 1;
+      transition: all 0.3s ease;
     }
 
     .iframe-wrapper iframe, 
@@ -107,7 +184,7 @@
         opacity: 0;
         transition: opacity 0.2s ease-in-out;
         display: flex;
-        justify-content: space-between; /* Mudado para space-between para acomodar o Toast info */
+        justify-content: space-between;
         align-items: flex-start;
         padding: 5px;
         box-sizing: border-box;
@@ -137,8 +214,7 @@
     .info-toast {
         position: absolute;
         top: 40px;
-        left: 10px;
-        right: 10px;
+        left: 10px; right: 10px;
         background: rgba(10, 10, 10, 0.95);
         border: 1px solid var(--accent-color);
         color: var(--text-color);
@@ -192,55 +268,6 @@
     .chat-placeholder {
         display:flex; flex-direction:column; justify-content:center; align-items:center; 
         height:100%; color: var(--text-color); opacity: 0.5; text-align: center; padding: 20px; font-size: 14px;
-    }
-
-    /* --- Botões Flutuantes --- */
-    .fab-container {
-        position: fixed; bottom: 25px; right: 25px;
-        display: flex; flex-direction: column; gap: 15px;
-        z-index: 100; align-items: flex-end;
-    }
-
-    .fab {
-      background-color: var(--accent-color);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 60px; height: 60px;
-      font-size: 30px;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-      transition: transform 0.2s, background-color 0.2s;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .fab:hover { filter: brightness(1.2); transform: scale(1.05); }
-    .fab.active { background-color: #ff4f4f; transform: rotate(45deg); }
-
-    .fab-mini {
-        width: 45px; height: 45px;
-        border-radius: 50%;
-        background-color: var(--sidebar-bg);
-        color: var(--text-color);
-        border: 1px solid var(--border-color);
-        cursor: pointer;
-        font-size: 18px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-        display: flex; align-items: center; justify-content: center;
-        transition: 0.2s;
-    }
-    .fab-mini:hover { background-color: var(--border-color); }
-    
-    .fab-ai {
-        background: linear-gradient(135deg, #4285f4, #9b72cb, #d96570);
-        border: none; color: white;
-        font-size: 20px;
-        animation: pulse-glow 3s infinite;
-    }
-    
-    @keyframes pulse-glow {
-        0% { box-shadow: 0 0 0 0 rgba(155, 114, 203, 0.4); }
-        70% { box-shadow: 0 0 0 10px rgba(155, 114, 203, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(155, 114, 203, 0); }
     }
 
     /* --- Modais --- */
@@ -302,6 +329,7 @@
         display: flex; gap: 10px; margin-bottom: 10px;
         border-bottom: 1px solid var(--border-color);
         padding-bottom: 10px;
+        overflow-x: auto;
     }
     .ai-tab {
         background: transparent; border: none;
@@ -309,6 +337,7 @@
         cursor: pointer; padding: 8px 16px;
         font-weight: bold; border-radius: 4px;
         transition: 0.2s;
+        white-space: nowrap;
     }
     .ai-tab.active { background: rgba(155, 114, 203, 0.2); opacity: 1; color: var(--accent-color); }
     .ai-tab:hover { opacity: 1; }
@@ -349,37 +378,58 @@
       Use um servidor local (como "Live Server" no VSCode) ou hospede o site para funcionar.
   </div>
 
-  <!-- Área Principal -->
-  <div class="video-area" id="contentGrid"></div>
+  <!-- Barra Superior (Header) -->
+  <header class="app-top-bar">
+      <div class="app-logo">MultiVPlayers</div>
+      
+      <div id="sessionTitleHeader"></div>
 
-  <!-- Painel Lateral de Chat -->
-  <div class="chat-panel" id="chatPanel">
-    <div class="chat-header">
-      <strong>Chats</strong>
-      <button onclick="toggleChat()" title="Ocultar" style="background:none; border:none; color:var(--text-color); cursor:pointer;">&#10005;</button>
-    </div>
-    
-    <div style="padding: 10px; display:flex; gap:5px;">
-        <select id="chatSelect" class="chat-select" onchange="changeChat()">
-            <option value="" disabled selected>Selecione um canal...</option>
-        </select>
-        <button onclick="resetChat()" title="Limpar Seleção" style="background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-color); border-radius:4px; width:35px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
-             &#10005;
-        </button>
-    </div>
+      <div class="header-actions">
+          <button class="toolbar-btn btn-ai" id="aiFab" title="Inteligência Artificial">
+              ✨ IA Tools
+          </button>
+          
+          <button class="toolbar-btn btn-primary" id="fab" title="Adicionar URL">
+              + Adicionar
+          </button>
+          
+          <button class="toolbar-btn" id="toggleChatFab" title="Mostrar/Ocultar Chat">
+              💬 Chat
+          </button>
+      </div>
+  </header>
 
-    <div class="chat-container" id="chatContainer">
-        <div class="chat-placeholder">
-            <p>Selecione um canal acima para carregar o chat.</p>
+  <!-- Container Principal -->
+  <div class="main-container">
+      
+      <!-- Área de Mosaico -->
+      <div class="video-area" id="contentGrid">
+          <!-- Cards serão injetados aqui -->
+      </div>
+
+      <!-- Painel Lateral de Chat -->
+      <div class="chat-panel" id="chatPanel">
+        <div class="chat-header">
+          <strong>Chats</strong>
+          <button onclick="toggleChat()" title="Ocultar" style="background:none; border:none; color:var(--text-color); cursor:pointer;">&#10005;</button>
         </div>
-    </div>
-  </div>
+        
+        <div style="padding: 10px; display:flex; gap:5px;">
+            <select id="chatSelect" class="chat-select" onchange="changeChat()">
+                <option value="" disabled selected>Selecione um canal...</option>
+            </select>
+            <button onclick="resetChat()" title="Limpar Seleção" style="background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-color); border-radius:4px; width:35px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                 &#10005;
+            </button>
+        </div>
 
-  <!-- Botões Flutuantes -->
-  <div class="fab-container">
-      <button class="fab-mini fab-ai" id="aiFab" title="Recursos IA (Gemini)">✨</button>
-      <button class="fab-mini" id="toggleChatFab" title="Alternar Chat">💬</button>
-      <button class="fab" id="fab" title="Adicionar Manualmente">+</button>
+        <div class="chat-container" id="chatContainer">
+            <div class="chat-placeholder">
+                <p>Selecione um canal acima para carregar o chat.</p>
+            </div>
+        </div>
+      </div>
+
   </div>
 
   <!-- Modal de Input Manual -->
@@ -420,6 +470,7 @@
 
       <div class="ai-tabs">
           <button class="ai-tab active" onclick="switchTab('mosaic')">Mosaico Mágico</button>
+          <button class="ai-tab" onclick="switchTab('session')">🧠 Sessão</button>
           <button class="ai-tab" onclick="switchTab('theme')">🎨 Temas</button>
           <button class="ai-tab" onclick="switchTab('copilot')">Co-Piloto</button>
       </div>
@@ -434,7 +485,33 @@
           <div id="mosaicStatus" style="margin-top:10px; font-size:13px; opacity:0.7; font-style:italic;"></div>
       </div>
 
-      <!-- Tab 2: Gerador de Temas -->
+      <!-- Tab 2: Gerenciador de Sessão -->
+      <div id="tab-session" class="ai-content">
+          <p style="opacity:0.8; font-size:14px;">A IA analisa seus vídeos abertos para organizar sua experiência.</p>
+          
+          <div style="display:grid; gap:10px; margin-top:15px;">
+              <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px;">
+                  <strong style="display:block; margin-bottom:5px;">🏷️ Nomear Sessão</strong>
+                  <p style="font-size:12px; opacity:0.6; margin-bottom:10px;">Cria um título épico baseado no que você está assistindo.</p>
+                  <button class="primary-btn" id="aiSessionNameBtn" style="width:100%; font-size:14px; padding:10px;">Gerar Título</button>
+              </div>
+              
+              <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px;">
+                  <strong style="display:block; margin-bottom:5px;">➕ Expandir Sessão</strong>
+                  <p style="font-size:12px; opacity:0.6; margin-bottom:10px;">A IA busca e adiciona 2 vídeos que combinam com o que já está na tela.</p>
+                  <button class="primary-btn" id="aiExpandSessionBtn" style="width:100%; font-size:14px; padding:10px; background-color: #4285f4;">Expandir Magic (+2)</button>
+              </div>
+
+              <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px;">
+                  <strong style="display:block; margin-bottom:5px;">🎵 DJ de Ambiente (BGM)</strong>
+                  <p style="font-size:12px; opacity:0.6; margin-bottom:10px;">Adiciona uma música de fundo do YouTube que combina com os vídeos.</p>
+                  <button class="primary-btn" id="aiAmbienceBtn" style="width:100%; font-size:14px; padding:10px; background-color: #d96570;">Sugerir & Adicionar</button>
+              </div>
+          </div>
+          <div id="sessionStatus" style="margin-top:10px; font-size:13px; opacity:0.7; text-align:center;"></div>
+      </div>
+
+      <!-- Tab 3: Gerador de Temas -->
       <div id="tab-theme" class="ai-content">
           <p style="opacity:0.8; font-size:14px;">Descreva uma atmosfera e a IA mudará as cores do site.</p>
           <div class="input-group">
@@ -444,7 +521,7 @@
           <button onclick="resetTheme()" style="margin-top:10px; background:transparent; border:1px solid var(--border-color); color:var(--text-color); padding:8px; width:100%; border-radius:6px; cursor:pointer;">Resetar Padrão</button>
       </div>
 
-      <!-- Tab 3: Co-Piloto -->
+      <!-- Tab 4: Co-Piloto -->
       <div id="tab-copilot" class="ai-content">
           <div class="gemini-chat-box" id="aiChatBox">
               <div class="chat-msg ai">Olá! Sou seu assistente. Pergunte sobre jogos, estratégias ou qualquer coisa!</div>
@@ -486,6 +563,8 @@
         addBtn: document.getElementById('addUrlButton'),
         
         grid: document.getElementById('contentGrid'),
+        sessionTitle: document.getElementById('sessionTitleHeader'),
+
         chatPanel: document.getElementById('chatPanel'),
         chatSelect: document.getElementById('chatSelect'),
         chatContainer: document.getElementById('chatContainer'),
@@ -493,9 +572,15 @@
         // AI Elements
         apiKeyInput: document.getElementById('apiKeyInput'),
         saveKeyBtn: document.getElementById('saveKeyBtn'),
+        
         mosaicPrompt: document.getElementById('aiMosaicPrompt'),
         generateBtn: document.getElementById('generateMosaicBtn'),
         mosaicStatus: document.getElementById('mosaicStatus'),
+        
+        sessionNameBtn: document.getElementById('aiSessionNameBtn'),
+        expandSessionBtn: document.getElementById('aiExpandSessionBtn'), 
+        ambienceBtn: document.getElementById('aiAmbienceBtn'),
+        sessionStatus: document.getElementById('sessionStatus'),
         
         themePrompt: document.getElementById('aiThemePrompt'),
         themeBtn: document.getElementById('generateThemeBtn'),
@@ -530,6 +615,11 @@
     els.themeBtn.onclick = handleThemeGen;
     els.chatSend.onclick = handleAiChat;
     els.chatInput.onkeypress = (e) => { if(e.key === 'Enter') handleAiChat(); };
+    
+    // Novos Listeners de Sessão
+    els.sessionNameBtn.onclick = handleSessionName;
+    els.expandSessionBtn.onclick = handleExpandSession; 
+    els.ambienceBtn.onclick = handleAmbienceSuggest;
 
     // --- Controle de UI ---
     function toggleOverlay(overlayElement, show) {
@@ -655,8 +745,113 @@
             els.generateBtn.disabled = false;
         }
     }
+    
+    // 2. Gerenciador de Sessão
+    function getCurrentUrls() {
+        const cards = document.querySelectorAll('.content-card');
+        return Array.from(cards).map(c => c.dataset.url);
+    }
 
-    // 2. Gerador de Temas
+    async function handleSessionName() {
+        const urls = getCurrentUrls();
+        if (urls.length === 0) return alert("Adicione vídeos antes de gerar um título!");
+        
+        els.sessionNameBtn.disabled = true;
+        els.sessionNameBtn.innerText = "Gerando...";
+        
+        try {
+            const payload = {
+                contents: [{ parts: [{ text: `Analise estas URLs/Canais: ${JSON.stringify(urls)}. Crie um Título curto, criativo e empolgante para esta sessão multitelas (em Português) com um Emoji. Ex: "🔥 Noite de CS:GO", "📚 Deep Focus". Retorne APENAS o texto do título.` }] }],
+                tools: [{ "google_search": {} }] 
+            };
+            const data = await callGemini(payload);
+            const title = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sessão Multitelas";
+            
+            els.sessionTitle.innerText = title.replace(/["']/g, ""); 
+            els.sessionTitle.classList.add('visible'); // Mostra suavemente
+            toggleOverlay(els.aiOverlay, false);
+            
+        } catch(e) {
+            alert("Erro: " + e.message);
+        } finally {
+            els.sessionNameBtn.disabled = false;
+            els.sessionNameBtn.innerText = "Gerar Título";
+        }
+    }
+    
+    // --- NOVO: EXPANDIR SESSÃO ---
+    async function handleExpandSession() {
+        const urls = getCurrentUrls();
+        if (urls.length === 0) return alert("Adicione algo primeiro para a IA expandir!");
+
+        els.expandSessionBtn.disabled = true;
+        els.expandSessionBtn.innerText = "Pesquisando...";
+        
+        try {
+            const payload = {
+                contents: [{ 
+                    parts: [{ 
+                        text: `Contexto: O usuário está assistindo a estes vídeos/streams: ${JSON.stringify(urls)}.
+                        Tarefa: Encontre MAIS 2 vídeos ou streams (YouTube ou Twitch) que complementem perfeitamente esta sessão.
+                        Requisito: Retorne APENAS um Array JSON com 2 URLs. Ex: ["https://...", "https://..."].` 
+                    }] 
+                }],
+                tools: [{ "google_search": {} }] 
+            };
+
+            const data = await callGemini(payload);
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            let jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            let newUrls = JSON.parse(jsonStr);
+
+            if (Array.isArray(newUrls)) {
+                let added = 0;
+                newUrls.forEach(url => { if (processUrl(url)) added++; });
+                els.sessionStatus.innerText = `Sessão expandida! +${added} vídeos.`;
+                toggleOverlay(els.aiOverlay, false);
+            } else {
+                throw new Error("Formato inválido.");
+            }
+        } catch (e) {
+             els.sessionStatus.innerText = "Erro ao expandir: " + e.message;
+        } finally {
+            els.expandSessionBtn.disabled = false;
+            els.expandSessionBtn.innerText = "Expandir Magic (+2)";
+        }
+    }
+
+    async function handleAmbienceSuggest() {
+        const urls = getCurrentUrls();
+        if (urls.length === 0) return alert("Adicione vídeos primeiro!");
+
+        els.ambienceBtn.disabled = true;
+        els.ambienceBtn.innerText = "Pesquisando...";
+        
+        try {
+            const payload = {
+                contents: [{ parts: [{ text: `Com base nestes streams: ${JSON.stringify(urls)}. Sugira e encontre UMA URL de vídeo do YouTube para música de fundo/ambiente (lofi, épica, chuva, etc) que combine perfeitamente. Retorne APENAS a URL.` }] }],
+                tools: [{ "google_search": {} }] 
+            };
+            const data = await callGemini(payload);
+            let url = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            
+            const urlMatch = url.match(/https?:\/\/[^\s]+/);
+            if (urlMatch) {
+                processUrl(urlMatch[0]);
+                els.sessionStatus.innerText = "Música de ambiente adicionada!";
+            } else {
+                throw new Error("Não encontrei uma URL válida.");
+            }
+            
+        } catch(e) {
+            els.sessionStatus.innerText = "Erro: " + e.message;
+        } finally {
+            els.ambienceBtn.disabled = false;
+            els.ambienceBtn.innerText = "Sugerir & Adicionar";
+        }
+    }
+
+    // 3. Gerador de Temas
     async function handleThemeGen() {
         const theme = els.themePrompt.value.trim();
         if (!theme) return;
@@ -702,7 +897,7 @@
         r.removeProperty('--border-color');
     }
 
-    // 3. Co-Piloto Chat
+    // 4. Co-Piloto Chat
     async function handleAiChat() {
         const msg = els.chatInput.value.trim();
         if (!msg) return;
@@ -725,7 +920,7 @@
         }
     }
 
-    // 4. Raio-X IA (Novo)
+    // 5. Raio-X IA
     async function handleAiInfo(url, toastId) {
         const toast = document.getElementById(toastId);
         toast.innerText = "Analisando com IA...";
@@ -738,7 +933,6 @@
                         text: `O que é este link? "${url}". Responda em UMA frase curta em Português dizendo quem é o streamer ou sobre o que é o site/vídeo.` 
                     }] 
                 }],
-                // Usamos a ferramenta de busca para garantir informações recentes
                 tools: [{ "google_search": {} }] 
             };
 
@@ -768,6 +962,46 @@
     function removeChatMsg(id) {
         const el = document.getElementById(id);
         if (el) el.remove();
+    }
+
+    // --- Grid Resize Logic (Updated) ---
+    function resizeGrid() {
+        const cards = document.querySelectorAll('.content-card');
+        const count = cards.length;
+        let width = '100%';
+
+        if (count === 0) return;
+
+        if (count === 1) {
+            width = '100%';
+        } else if (count === 2) {
+            width = 'calc(50% - 8px)';
+        } else if (count === 3) {
+            width = 'calc(33.333% - 10px)';
+        } else if (count === 4) {
+            width = 'calc(50% - 8px)';
+        } else {
+            width = 'calc(33.333% - 10px)';
+        }
+
+        cards.forEach(card => {
+            card.style.flex = `0 0 ${width}`;
+            card.style.maxWidth = width;
+            
+            if(count === 1) {
+                 // Modo Cinema (100% altura se possível, mas mantendo wrapper relativo)
+                 card.style.height = '100%';
+                 const wrapper = card.querySelector('.iframe-wrapper');
+                 wrapper.style.paddingBottom = '0';
+                 wrapper.style.height = '100%';
+                 wrapper.style.flexGrow = '1';
+            } else {
+                 card.style.height = 'auto';
+                 const wrapper = card.querySelector('.iframe-wrapper');
+                 wrapper.style.paddingBottom = '56.25%';
+                 wrapper.style.height = '0';
+            }
+        });
     }
 
     // --- Lógica de Embed ---
@@ -851,16 +1085,14 @@
         const header = document.createElement('div');
         header.className = 'card-header-overlay';
         
-        // Botão de IA (Esquerda)
         const leftGroup = document.createElement('div');
         leftGroup.className = 'btn-group';
         
         const aiInfoBtn = document.createElement('button');
         aiInfoBtn.className = 'btn-icon btn-ai-info';
         aiInfoBtn.innerHTML = '✨'; 
-        aiInfoBtn.title = 'Raio-X IA (O que é isso?)';
+        aiInfoBtn.title = 'Raio-X IA';
         
-        // Toast para info
         const toastId = 'toast-' + Math.random().toString(36).substr(2, 9);
         const toast = document.createElement('div');
         toast.className = 'info-toast';
@@ -869,7 +1101,6 @@
         aiInfoBtn.onclick = () => handleAiInfo(url, toastId);
         leftGroup.appendChild(aiInfoBtn);
 
-        // Botões de Controle (Direita)
         const rightGroup = document.createElement('div');
         rightGroup.className = 'btn-group';
 
@@ -893,10 +1124,10 @@
             removeData(url);
             if(embedData.type === 'twitch_live') removeChatOption(embedData.channel);
             card.remove();
+            resizeGrid(); // IMPORTANT: resize on remove
         };
 
         rightGroup.append(refreshBtn, openBtn, closeBtn);
-        
         header.appendChild(leftGroup);
         header.appendChild(rightGroup);
 
@@ -905,9 +1136,11 @@
         wrapper.innerHTML = embedData.html;
 
         card.appendChild(header);
-        card.appendChild(toast); // Adiciona o toast ao card
+        card.appendChild(toast);
         card.appendChild(wrapper);
         els.grid.appendChild(card);
+        
+        resizeGrid(); // IMPORTANT: resize on add
     }
 
     function addChatOption(channel) {
@@ -979,6 +1212,7 @@
             const embedData = generateEmbed(url);
             if (embedData) createCard(url, embedData);
         });
+        resizeGrid(); // Ensure resizing on load
     }
   </script>
 </body>
