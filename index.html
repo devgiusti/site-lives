@@ -22,7 +22,7 @@
       margin: 0;
       font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       display: flex;
-      flex-direction: column; /* Alterado para coluna para acomodar o header */
+      flex-direction: column;
       height: 100vh;
       overflow: hidden;
       background-color: var(--bg-color);
@@ -30,7 +30,7 @@
       transition: background-color 0.5s ease, color 0.5s ease;
     }
 
-    /* --- Barra Superior (NOVO) --- */
+    /* --- Barra Superior (Header) --- */
     .app-top-bar {
         height: var(--header-height);
         background-color: var(--sidebar-bg);
@@ -53,12 +53,12 @@
         margin-right: 20px;
     }
 
-    /* Título da Sessão (Movido para o Header) */
+    /* Título da Sessão */
     #sessionTitleHeader {
         font-size: 1.1rem;
         font-weight: 600;
         color: var(--text-color);
-        opacity: 0; /* Começa invisível */
+        opacity: 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -72,10 +72,27 @@
     /* Container de Botões do Header */
     .header-actions {
         display: flex;
+        align-items: center;
         gap: 10px;
     }
 
-    /* Botões da Toolbar (Estilo atualizado) */
+    /* Seletor de Idioma */
+    .lang-select {
+        background-color: rgba(255,255,255,0.05);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        height: 36px;
+        padding: 0 10px;
+        cursor: pointer;
+        font-size: 13px;
+        outline: none;
+        margin-right: 5px;
+    }
+    .lang-select:hover { background-color: rgba(255,255,255,0.1); }
+    .lang-select option { background-color: var(--sidebar-bg); }
+
+    /* Botões da Toolbar */
     .toolbar-btn {
         background-color: rgba(255,255,255,0.05);
         color: var(--text-color);
@@ -104,7 +121,7 @@
     .btn-ai:hover { background: linear-gradient(135deg, rgba(66, 133, 244, 0.4), rgba(155, 114, 203, 0.4)); color: white; }
 
 
-    /* --- Layout Principal (Abaixo do Header) --- */
+    /* --- Layout Principal --- */
     .main-container {
         display: flex;
         flex: 1;
@@ -112,7 +129,6 @@
         position: relative;
     }
 
-    /* --- Aviso de Protocolo FILE --- */
     #fileProtocolWarning {
         display: none;
         background-color: #aa0000;
@@ -128,9 +144,7 @@
       flex: 1;
       display: flex;
       flex-wrap: wrap;
-      /* Centraliza conteúdo na horizontal (para ímpares ficarem no meio) */
       justify-content: center;
-      /* Centraliza conteúdo na vertical se sobrar espaço */
       align-content: center; 
       padding: 10px;
       gap: 10px;
@@ -145,7 +159,6 @@
     .video-area::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
     .video-area::-webkit-scrollbar-thumb:hover { background: #555; }
 
-    /* O flex-basis agora é controlado via JS (resizeGrid) */
     .content-card {
       background-color: var(--card-bg);
       position: relative;
@@ -156,16 +169,14 @@
       display: flex;
       flex-direction: column;
       transition: all 0.3s ease; 
-      /* Altura será injetada pelo JS para preencher a tela */
     }
     
     .content-card:hover { border-color: var(--accent-color); }
 
-    /* --- Container do Iframe --- */
     .iframe-wrapper {
       position: relative;
       width: 100%;
-      height: 100%; /* Força preencher o card */
+      height: 100%;
       background: #000;
       flex-grow: 1;
       transition: all 0.3s ease;
@@ -179,7 +190,6 @@
       border: none;
     }
 
-    /* --- Barra de Ferramentas do Cartão --- */
     .card-header-overlay {
         position: absolute;
         top: 0; left: 0; width: 100%;
@@ -215,7 +225,6 @@
     .btn-ai-info { border-color: #4285f4; color: #4285f4; }
     .btn-ai-info:hover { background: #4285f4; color: white; }
 
-    /* --- Info Toast (Raio-X) --- */
     .info-toast {
         position: absolute;
         top: 40px;
@@ -378,9 +387,8 @@
 <body>
 
   <!-- Aviso de Erro Crítico -->
-  <div id="fileProtocolWarning">
-      ⚠️ ERRO: Você abriu este arquivo diretamente do PC. A Twitch BLOQUEIA isso. 
-      Use um servidor local (como "Live Server" no VSCode) ou hospede o site para funcionar.
+  <div id="fileProtocolWarning" data-i18n="error_protocol">
+      ⚠️ ERRO: Você abriu este arquivo diretamente do PC. Use um servidor local (Live Server) para a Twitch funcionar.
   </div>
 
   <!-- Barra Superior (Header) -->
@@ -390,16 +398,29 @@
       <div id="sessionTitleHeader"></div>
 
       <div class="header-actions">
-          <button class="toolbar-btn btn-ai" id="aiFab" title="Inteligência Artificial">
-              ✨ IA Tools
+          <!-- Seletor de Idioma -->
+          <select id="langSelect" class="lang-select">
+              <option value="pt">🇧🇷 PT</option>
+              <option value="en">🇺🇸 EN</option>
+              <option value="es">🇪🇸 ES</option>
+              <option value="fr">🇫🇷 FR</option>
+              <option value="de">🇩🇪 DE</option>
+              <option value="it">🇮🇹 IT</option>
+              <option value="ru">🇷🇺 RU</option>
+              <option value="zh">🇨🇳 CN</option>
+              <option value="ja">🇯🇵 JP</option>
+          </select>
+
+          <button class="toolbar-btn btn-ai" id="aiFab" title="IA Tools">
+              <span data-i18n="header_ai">✨ IA Tools</span>
           </button>
           
-          <button class="toolbar-btn btn-primary" id="fab" title="Adicionar URL">
-              + Adicionar
+          <button class="toolbar-btn btn-primary" id="fab" title="Adicionar">
+              <span data-i18n="header_add">+ Adicionar</span>
           </button>
           
-          <button class="toolbar-btn" id="toggleChatFab" title="Mostrar/Ocultar Chat">
-              💬 Chat
+          <button class="toolbar-btn" id="toggleChatFab" title="Chat">
+              <span data-i18n="header_chat">💬 Chat</span>
           </button>
       </div>
   </header>
@@ -415,22 +436,22 @@
       <!-- Painel Lateral de Chat -->
       <div class="chat-panel" id="chatPanel">
         <div class="chat-header">
-          <strong>Chats</strong>
-          <button onclick="toggleChat()" title="Ocultar" style="background:none; border:none; color:var(--text-color); cursor:pointer;">&#10005;</button>
+          <strong data-i18n="chat_title">Chats</strong>
+          <button onclick="toggleChat()" data-i18n="chat_hide" title="Ocultar" style="background:none; border:none; color:var(--text-color); cursor:pointer;">&#10005;</button>
         </div>
         
         <div style="padding: 10px; display:flex; gap:5px;">
             <select id="chatSelect" class="chat-select" onchange="changeChat()">
-                <option value="" disabled selected>Selecione um canal...</option>
+                <option value="" disabled selected data-i18n="chat_select_default">Selecione um canal...</option>
             </select>
-            <button onclick="resetChat()" title="Limpar Seleção" style="background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-color); border-radius:4px; width:35px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+            <button onclick="resetChat()" title="Limpar" style="background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-color); border-radius:4px; width:35px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
                  &#10005;
             </button>
         </div>
 
         <div class="chat-container" id="chatContainer">
             <div class="chat-placeholder">
-                <p>Selecione um canal acima para carregar o chat.</p>
+                <p data-i18n="chat_placeholder">Selecione um canal acima para carregar o chat.</p>
             </div>
         </div>
       </div>
@@ -440,17 +461,17 @@
   <!-- Modal de Input Manual -->
   <div class="modal-overlay" id="urlInputOverlay">
     <div class="modal-panel url-input-panel">
-      <h2>Adicionar Conteúdo</h2>
-      <p style="opacity:0.7; font-size:14px; margin-top:-10px;">Cole URL ou código HTML (iframe/embed).</p>
+      <h2 data-i18n="modal_add_title">Adicionar Conteúdo</h2>
+      <p style="opacity:0.7; font-size:14px; margin-top:-10px;" data-i18n="modal_add_desc">Cole URL ou código HTML (iframe/embed).</p>
       
       <div class="input-group">
         <input type="text" id="urlInput" placeholder="https://... ou <iframe...>" autocomplete="off">
       </div>
       
-      <button class="primary-btn" id="addUrlButton">Adicionar ao Mosaico</button>
+      <button class="primary-btn" id="addUrlButton" data-i18n="modal_add_btn">Adicionar ao Mosaico</button>
       
       <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; font-size: 12px; opacity: 0.7;">
-          <strong>Dica:</strong> Se um site não carregar (tela branca), use o botão de seta <span style="font-family:monospace;">&#8599;</span> no cartão para abrir externamente.
+          <strong data-i18n="modal_add_tip">Dica: Se um site não carregar (tela branca), use o botão de seta ↗ no cartão para abrir externamente.</strong>
       </div>
     </div>
   </div>
@@ -459,58 +480,58 @@
   <div class="modal-overlay" id="aiOverlay">
     <div class="modal-panel">
       <div style="display:flex; justify-content:space-between; align-items:center;">
-          <h2 style="background: linear-gradient(90deg, #4285f4, #d96570); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">MultiVPlayers AI ✨</h2>
+          <h2 style="background: linear-gradient(90deg, #4285f4, #d96570); -webkit-background-clip: text; -webkit-text-fill-color: transparent;" data-i18n="ai_title">MultiVPlayers AI ✨</h2>
           <button id="closeAiBtn" style="background:none; border:none; color:var(--text-color); cursor:pointer; font-size:20px;">&times;</button>
       </div>
       
       <!-- API Key Section -->
       <div id="apiKeySection" style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; font-size:13px; margin-bottom:10px;">
           <div style="display:flex; gap:10px; align-items:center;">
-              <span style="opacity:0.7;">Gemini API Key:</span>
-              <input type="password" id="apiKeyInput" placeholder="Cole sua chave aqui..." style="background:rgba(0,0,0,0.5); border:1px solid var(--border-color); color:white; padding:5px; border-radius:4px; flex-grow:1;">
-              <button id="saveKeyBtn" style="background:var(--border-color); color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Salvar</button>
+              <span style="opacity:0.7;" data-i18n="ai_key_label">Gemini API Key:</span>
+              <input type="password" id="apiKeyInput" placeholder="..." style="background:rgba(0,0,0,0.5); border:1px solid var(--border-color); color:white; padding:5px; border-radius:4px; flex-grow:1;">
+              <button id="saveKeyBtn" style="background:var(--border-color); color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;" data-i18n="ai_save_btn">Salvar</button>
           </div>
-          <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#4285f4; font-size:11px; text-decoration:none; margin-top:5px; display:inline-block;">Obter Chave Grátis</a>
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#4285f4; font-size:11px; text-decoration:none; margin-top:5px; display:inline-block;" data-i18n="ai_get_key">Obter Chave Grátis</a>
       </div>
 
       <div class="ai-tabs">
-          <button class="ai-tab active" onclick="switchTab('mosaic')">Mosaico Mágico</button>
-          <button class="ai-tab" onclick="switchTab('session')">🧠 Sessão</button>
-          <button class="ai-tab" onclick="switchTab('theme')">🎨 Temas</button>
-          <button class="ai-tab" onclick="switchTab('copilot')">Co-Piloto</button>
+          <button class="ai-tab active" onclick="switchTab('mosaic')" data-i18n="tab_mosaic">Mosaico Mágico</button>
+          <button class="ai-tab" onclick="switchTab('session')" data-i18n="tab_session">🧠 Sessão</button>
+          <button class="ai-tab" onclick="switchTab('theme')" data-i18n="tab_theme">🎨 Temas</button>
+          <button class="ai-tab" onclick="switchTab('copilot')" data-i18n="tab_copilot">Co-Piloto</button>
       </div>
 
       <!-- Tab 1: Mosaico Mágico -->
       <div id="tab-mosaic" class="ai-content active">
-          <p style="opacity:0.8; font-size:14px;">A IA pesquisa vídeos reais na internet e monta o layout para você.</p>
+          <p style="opacity:0.8; font-size:14px;" data-i18n="mosaic_desc">A IA pesquisa vídeos reais na internet e monta o layout para você.</p>
           <div class="input-group">
-            <input type="text" id="aiMosaicPrompt" placeholder="Ex: 'Torneio de CS2 ao vivo' ou 'Música Lo-Fi Relaxante'" autocomplete="off">
+            <input type="text" id="aiMosaicPrompt" placeholder="..." autocomplete="off">
           </div>
-          <button class="primary-btn" id="generateMosaicBtn" style="margin-top:15px; width:100%;">✨ Gerar Mosaico</button>
+          <button class="primary-btn" id="generateMosaicBtn" style="margin-top:15px; width:100%;" data-i18n="mosaic_btn">✨ Gerar Mosaico</button>
           <div id="mosaicStatus" style="margin-top:10px; font-size:13px; opacity:0.7; font-style:italic;"></div>
       </div>
 
       <!-- Tab 2: Gerenciador de Sessão -->
       <div id="tab-session" class="ai-content">
-          <p style="opacity:0.8; font-size:14px;">A IA analisa seus vídeos abertos para organizar sua experiência.</p>
+          <p style="opacity:0.8; font-size:14px;" data-i18n="session_desc">A IA analisa seus vídeos abertos para organizar sua experiência.</p>
           
           <div style="display:grid; gap:10px; margin-top:15px;">
               <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px;">
-                  <strong style="display:block; margin-bottom:5px;">🏷️ Nomear Sessão</strong>
-                  <p style="font-size:12px; opacity:0.6; margin-bottom:10px;">Cria um título épico baseado no que você está assistindo.</p>
-                  <button class="primary-btn" id="aiSessionNameBtn" style="width:100%; font-size:14px; padding:10px;">Gerar Título</button>
+                  <strong style="display:block; margin-bottom:5px;" data-i18n="session_name_title">🏷️ Nomear Sessão</strong>
+                  <p style="font-size:12px; opacity:0.6; margin-bottom:10px;" data-i18n="session_name_desc">Cria um título épico baseado no que você está assistindo.</p>
+                  <button class="primary-btn" id="aiSessionNameBtn" style="width:100%; font-size:14px; padding:10px;" data-i18n="session_name_btn">Gerar Título</button>
               </div>
               
               <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px;">
-                  <strong style="display:block; margin-bottom:5px;">➕ Expandir Sessão</strong>
-                  <p style="font-size:12px; opacity:0.6; margin-bottom:10px;">A IA busca e adiciona 2 vídeos que combinam com o que já está na tela.</p>
-                  <button class="primary-btn" id="aiExpandSessionBtn" style="width:100%; font-size:14px; padding:10px; background-color: #4285f4;">Expandir Magic (+2)</button>
+                  <strong style="display:block; margin-bottom:5px;" data-i18n="session_expand_title">➕ Expandir Sessão</strong>
+                  <p style="font-size:12px; opacity:0.6; margin-bottom:10px;" data-i18n="session_expand_desc">A IA busca e adiciona 2 vídeos que combinam com o que já está na tela.</p>
+                  <button class="primary-btn" id="aiExpandSessionBtn" style="width:100%; font-size:14px; padding:10px; background-color: #4285f4;" data-i18n="session_expand_btn">Expandir Magic (+2)</button>
               </div>
 
               <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px;">
-                  <strong style="display:block; margin-bottom:5px;">🎵 DJ de Ambiente (BGM)</strong>
-                  <p style="font-size:12px; opacity:0.6; margin-bottom:10px;">Adiciona uma música de fundo do YouTube que combina com os vídeos.</p>
-                  <button class="primary-btn" id="aiAmbienceBtn" style="width:100%; font-size:14px; padding:10px; background-color: #d96570;">Sugerir & Adicionar</button>
+                  <strong style="display:block; margin-bottom:5px;" data-i18n="session_bgm_title">🎵 DJ de Ambiente (BGM)</strong>
+                  <p style="font-size:12px; opacity:0.6; margin-bottom:10px;" data-i18n="session_bgm_desc">Adiciona uma música de fundo do YouTube que combina com os vídeos.</p>
+                  <button class="primary-btn" id="aiAmbienceBtn" style="width:100%; font-size:14px; padding:10px; background-color: #d96570;" data-i18n="session_bgm_btn">Sugerir & Adicionar</button>
               </div>
           </div>
           <div id="sessionStatus" style="margin-top:10px; font-size:13px; opacity:0.7; text-align:center;"></div>
@@ -518,21 +539,21 @@
 
       <!-- Tab 3: Gerador de Temas -->
       <div id="tab-theme" class="ai-content">
-          <p style="opacity:0.8; font-size:14px;">Descreva uma atmosfera e a IA mudará as cores do site.</p>
+          <p style="opacity:0.8; font-size:14px;" data-i18n="theme_desc">Descreva uma atmosfera e a IA mudará as cores do site.</p>
           <div class="input-group">
-            <input type="text" id="aiThemePrompt" placeholder="Ex: 'Cyberpunk Neon', 'Floresta Escura', 'Clean White'" autocomplete="off">
+            <input type="text" id="aiThemePrompt" placeholder="..." autocomplete="off">
           </div>
-          <button class="primary-btn" id="generateThemeBtn" style="margin-top:15px; width:100%;">🎨 Aplicar Tema</button>
-          <button onclick="resetTheme()" style="margin-top:10px; background:transparent; border:1px solid var(--border-color); color:var(--text-color); padding:8px; width:100%; border-radius:6px; cursor:pointer;">Resetar Padrão</button>
+          <button class="primary-btn" id="generateThemeBtn" style="margin-top:15px; width:100%;" data-i18n="theme_btn">🎨 Aplicar Tema</button>
+          <button onclick="resetTheme()" style="margin-top:10px; background:transparent; border:1px solid var(--border-color); color:var(--text-color); padding:8px; width:100%; border-radius:6px; cursor:pointer;" data-i18n="theme_reset">Resetar Padrão</button>
       </div>
 
       <!-- Tab 4: Co-Piloto -->
       <div id="tab-copilot" class="ai-content">
           <div class="gemini-chat-box" id="aiChatBox">
-              <div class="chat-msg ai">Olá! Sou seu assistente. Pergunte sobre jogos, estratégias ou qualquer coisa!</div>
+              <div class="chat-msg ai" data-i18n="copilot_msg">Olá! Sou seu assistente. Pergunte sobre jogos, estratégias ou qualquer coisa!</div>
           </div>
           <div style="display:flex; gap:10px;">
-              <input type="text" id="aiChatInput" placeholder="Sua pergunta..." style="flex-grow:1; padding:10px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.2); color:var(--text-color);">
+              <input type="text" id="aiChatInput" placeholder="..." style="flex-grow:1; padding:10px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.2); color:var(--text-color);">
               <button id="aiChatSend" style="padding:0 15px; background:var(--accent-color); color:white; border:none; border-radius:6px; cursor:pointer;">➤</button>
           </div>
       </div>
@@ -544,11 +565,224 @@
     // --- Configurações e Estado ---
     const LS_KEY = 'multiVPlayers_final_data';
     const API_KEY_LS = 'gemini_api_key';
+    const LANG_KEY = 'multiVPlayers_lang';
     let twitchChannels = [];
     let currentHostname = window.location.hostname;
-    // IMPORTANTE: Insira sua chave manualmente se não usar o painel da UI
     const systemApiKey = ""; 
-    
+    let currentLang = localStorage.getItem(LANG_KEY) || 'pt';
+
+    // --- Traduções ---
+    const translations = {
+        pt: {
+            error_protocol: "⚠️ ERRO: Você abriu este arquivo diretamente do PC. Use um servidor local (Live Server) para a Twitch funcionar.",
+            header_ai: "✨ IA Tools",
+            header_add: "+ Adicionar",
+            header_chat: "💬 Chat",
+            chat_title: "Chats",
+            chat_hide: "Ocultar",
+            chat_select_default: "Selecione um canal...",
+            chat_placeholder: "Selecione um canal acima para carregar o chat.",
+            modal_add_title: "Adicionar Conteúdo",
+            modal_add_desc: "Cole URL ou código HTML (iframe/embed).",
+            modal_add_btn: "Adicionar ao Mosaico",
+            modal_add_tip: "Dica: Se um site não carregar (tela branca), use o botão de seta ↗ no cartão para abrir externamente.",
+            ai_title: "MultiVPlayers AI ✨",
+            ai_key_label: "Gemini API Key:",
+            ai_save_btn: "Salvar",
+            ai_get_key: "Obter Chave Grátis",
+            tab_mosaic: "Mosaico Mágico",
+            tab_session: "🧠 Sessão",
+            tab_theme: "🎨 Temas",
+            tab_copilot: "Co-Piloto",
+            mosaic_desc: "A IA pesquisa vídeos reais na internet e monta o layout para você.",
+            mosaic_btn: "✨ Gerar Mosaico",
+            session_desc: "A IA analisa seus vídeos abertos para organizar sua experiência.",
+            session_name_title: "🏷️ Nomear Sessão",
+            session_name_desc: "Cria um título épico baseado no que você está assistindo.",
+            session_name_btn: "Gerar Título",
+            session_expand_title: "➕ Expandir Sessão",
+            session_expand_desc: "A IA busca e adiciona 2 vídeos que combinam com o que já está na tela.",
+            session_expand_btn: "Expandir Magic (+2)",
+            session_bgm_title: "🎵 DJ de Ambiente (BGM)",
+            session_bgm_desc: "Adiciona uma música de fundo do YouTube que combina com os vídeos.",
+            session_bgm_btn: "Sugerir & Adicionar",
+            theme_desc: "Descreva uma atmosfera e a IA mudará as cores do site.",
+            theme_btn: "🎨 Aplicar Tema",
+            theme_reset: "Resetar Padrão",
+            copilot_msg: "Olá! Sou seu assistente. Pergunte sobre jogos, estratégias ou qualquer coisa!",
+            // Placeholders
+            p_url: "https://... ou <iframe...>",
+            p_mosaic: "Ex: 'Torneio de CS2 ao vivo' ou 'Música Lo-Fi Relaxante'",
+            p_theme: "Ex: 'Cyberpunk Neon', 'Floresta Escura', 'Clean White'",
+            p_chat: "Sua pergunta...",
+            p_key: "Cole sua chave aqui..."
+        },
+        en: {
+            error_protocol: "⚠️ ERROR: File opened directly. Use a local server (Live Server) for Twitch to work.",
+            header_ai: "✨ AI Tools",
+            header_add: "+ Add",
+            header_chat: "💬 Chat",
+            chat_title: "Chats",
+            chat_hide: "Hide",
+            chat_select_default: "Select a channel...",
+            chat_placeholder: "Select a channel above to load the chat.",
+            modal_add_title: "Add Content",
+            modal_add_desc: "Paste URL or HTML code (iframe/embed).",
+            modal_add_btn: "Add to Mosaic",
+            modal_add_tip: "Tip: If a site doesn't load (white screen), use the arrow button ↗ on the card to open externally.",
+            ai_title: "MultiVPlayers AI ✨",
+            ai_key_label: "Gemini API Key:",
+            ai_save_btn: "Save",
+            ai_get_key: "Get Free Key",
+            tab_mosaic: "Magic Mosaic",
+            tab_session: "🧠 Session",
+            tab_theme: "🎨 Themes",
+            tab_copilot: "Co-Pilot",
+            mosaic_desc: "AI searches for real videos online and builds the layout for you.",
+            mosaic_btn: "✨ Generate Mosaic",
+            session_desc: "AI analyzes your open videos to organize your experience.",
+            session_name_title: "🏷️ Name Session",
+            session_name_desc: "Creates an epic title based on what you are watching.",
+            session_name_btn: "Generate Title",
+            session_expand_title: "➕ Expand Session",
+            session_expand_desc: "AI finds and adds 2 videos that match what's on screen.",
+            session_expand_btn: "Magic Expand (+2)",
+            session_bgm_title: "🎵 Ambience DJ (BGM)",
+            session_bgm_desc: "Adds background music from YouTube that matches the videos.",
+            session_bgm_btn: "Suggest & Add",
+            theme_desc: "Describe an atmosphere and AI will change site colors.",
+            theme_btn: "🎨 Apply Theme",
+            theme_reset: "Reset Default",
+            copilot_msg: "Hello! I'm your assistant. Ask about games, strategies, or anything!",
+            p_url: "https://... or <iframe...>",
+            p_mosaic: "Ex: 'Live CS2 tournament' or 'Relaxing Lo-Fi Music'",
+            p_theme: "Ex: 'Cyberpunk Neon', 'Dark Forest', 'Clean White'",
+            p_chat: "Your question...",
+            p_key: "Paste your key here..."
+        },
+        es: {
+            error_protocol: "⚠️ ERROR: Archivo abierto directamente. Usa un servidor local para que Twitch funcione.",
+            header_ai: "✨ Herr. IA",
+            header_add: "+ Añadir",
+            header_chat: "💬 Chat",
+            chat_title: "Chats",
+            chat_hide: "Ocultar",
+            chat_select_default: "Selecciona un canal...",
+            chat_placeholder: "Selecciona un canal arriba para cargar el chat.",
+            modal_add_title: "Añadir Contenido",
+            modal_add_desc: "Pega URL o código HTML (iframe/embed).",
+            modal_add_btn: "Añadir al Mosaico",
+            modal_add_tip: "Consejo: Si un sitio no carga, usa el botón de flecha ↗ en la tarjeta.",
+            ai_title: "MultiVPlayers IA ✨",
+            ai_key_label: "Clave API Gemini:",
+            ai_save_btn: "Guardar",
+            ai_get_key: "Obtener Clave Gratis",
+            tab_mosaic: "Mosaico Mágico",
+            tab_session: "🧠 Sesión",
+            tab_theme: "🎨 Temas",
+            tab_copilot: "Co-Piloto",
+            mosaic_desc: "La IA busca videos reales y monta el diseño por ti.",
+            mosaic_btn: "✨ Generar Mosaico",
+            session_desc: "La IA analiza tus videos para organizar tu experiencia.",
+            session_name_title: "🏷️ Nombrar Sesión",
+            session_name_desc: "Crea un título épico basado en lo que estás viendo.",
+            session_name_btn: "Generar Título",
+            session_expand_title: "➕ Expandir Sesión",
+            session_expand_desc: "La IA encuentra y añade 2 videos que combinan.",
+            session_expand_btn: "Expansión Mágica (+2)",
+            session_bgm_title: "🎵 DJ de Ambiente",
+            session_bgm_desc: "Añade música de fondo de YouTube que combina.",
+            session_bgm_btn: "Sugerir y Añadir",
+            theme_desc: "Describe una atmósfera y la IA cambiará los colores.",
+            theme_btn: "🎨 Aplicar Tema",
+            theme_reset: "Restablecer",
+            copilot_msg: "¡Hola! Soy tu asistente. ¡Pregunta sobre juegos o estrategias!",
+            p_url: "https://... o <iframe...>",
+            p_mosaic: "Ej: 'Torneo CS2 en vivo' o 'Música Lo-Fi'",
+            p_theme: "Ej: 'Cyberpunk Neón', 'Bosque Oscuro'",
+            p_chat: "Tu pregunta...",
+            p_key: "Pega tu clave aquí..."
+        },
+        fr: {
+            header_ai: "✨ Outils IA", header_add: "+ Ajouter", header_chat: "💬 Chat",
+            chat_title: "Chats", chat_hide: "Masquer", chat_select_default: "Sélectionnez...",
+            chat_placeholder: "Sélectionnez un canal ci-dessus.",
+            modal_add_title: "Ajouter Contenu", modal_add_desc: "Collez URL ou code HTML.",
+            modal_add_btn: "Ajouter au Mosaïque", modal_add_tip: "Astuce: Utilisez la flèche ↗ si le site ne charge pas.",
+            ai_title: "MultiVPlayers IA ✨", ai_key_label: "Clé API Gemini:", ai_save_btn: "Sauver",
+            tab_mosaic: "Mosaïque Magique", tab_session: "🧠 Session", tab_theme: "🎨 Thèmes", tab_copilot: "Co-Pilote",
+            mosaic_btn: "✨ Générer Mosaïque", session_name_btn: "Générer Titre", session_expand_btn: "Étendre (+2)",
+            session_bgm_btn: "Suggérer & Ajouter", theme_btn: "🎨 Appliquer Thème", theme_reset: "Réinitialiser",
+            copilot_msg: "Salut! Je suis votre assistant gamer.",
+            p_url: "https://... ou <iframe...>", p_mosaic: "Ex: 'Tournoi CS2'", p_theme: "Ex: 'Cyberpunk'", p_chat: "Votre question...", p_key: "Votre clé ici..."
+        },
+        de: {
+            header_ai: "✨ KI-Tools", header_add: "+ Hinzufügen", header_chat: "💬 Chat",
+            chat_title: "Chats", chat_hide: "Verbergen", chat_select_default: "Wähle einen Kanal...",
+            chat_placeholder: "Wähle oben einen Kanal aus.",
+            modal_add_title: "Inhalt hinzufügen", modal_add_desc: "URL oder HTML-Code einfügen.",
+            modal_add_btn: "Zum Mosaik", modal_add_tip: "Tipp: Nutze den Pfeil ↗, wenn die Seite nicht lädt.",
+            ai_title: "MultiVPlayers KI ✨", ai_key_label: "Gemini API Key:", ai_save_btn: "Speichern",
+            tab_mosaic: "Magisches Mosaik", tab_session: "🧠 Sitzung", tab_theme: "🎨 Themen", tab_copilot: "Co-Pilot",
+            mosaic_btn: "✨ Mosaik erstellen", session_name_btn: "Titel generieren", session_expand_btn: "Erweitern (+2)",
+            session_bgm_btn: "BGM hinzufügen", theme_btn: "🎨 Thema anwenden", theme_reset: "Zurücksetzen",
+            copilot_msg: "Hallo! Ich bin dein Gaming-Assistent.",
+            p_url: "https://... oder <iframe...>", p_mosaic: "Bsp: 'CS2 Live'", p_theme: "Bsp: 'Cyberpunk'", p_chat: "Deine Frage...", p_key: "Schlüssel hier..."
+        },
+        it: {
+            header_ai: "✨ Strumenti IA", header_add: "+ Aggiungi", header_chat: "💬 Chat",
+            chat_title: "Chat", chat_hide: "Nascondi", chat_select_default: "Seleziona canale...",
+            chat_placeholder: "Seleziona un canale sopra.",
+            modal_add_title: "Aggiungi Contenuto", modal_add_desc: "Incolla URL o codice HTML.",
+            modal_add_btn: "Aggiungi al Mosaico", modal_add_tip: "Consiglio: Usa la freccia ↗ se il sito non carica.",
+            ai_title: "MultiVPlayers IA ✨", ai_key_label: "Chiave API Gemini:", ai_save_btn: "Salva",
+            tab_mosaic: "Mosaico Magico", tab_session: "🧠 Sessione", tab_theme: "🎨 Temi", tab_copilot: "Co-Pilota",
+            mosaic_btn: "✨ Genera Mosaico", session_name_btn: "Genera Titolo", session_expand_btn: "Espandi (+2)",
+            session_bgm_btn: "Suggerisci BGM", theme_btn: "🎨 Applica Tema", theme_reset: "Resetta",
+            copilot_msg: "Ciao! Sono il tuo assistente gamer.",
+            p_url: "https://... o <iframe...>", p_mosaic: "Es: 'Torneo CS2'", p_theme: "Es: 'Cyberpunk'", p_chat: "La tua domanda...", p_key: "La tua chiave..."
+        },
+        ru: {
+            header_ai: "✨ ИИ Инструменты", header_add: "+ Добавить", header_chat: "💬 Чат",
+            chat_title: "Чаты", chat_hide: "Скрыть", chat_select_default: "Выберите канал...",
+            chat_placeholder: "Выберите канал выше, чтобы загрузить чат.",
+            modal_add_title: "Добавить контент", modal_add_desc: "Вставьте URL или HTML код.",
+            modal_add_btn: "Добавить в мозаику", modal_add_tip: "Совет: Если сайт не грузится, нажмите ↗.",
+            ai_title: "MultiVPlayers ИИ ✨", ai_key_label: "Ключ API Gemini:", ai_save_btn: "Сохранить",
+            tab_mosaic: "Магия", tab_session: "🧠 Сессия", tab_theme: "🎨 Темы", tab_copilot: "Ко-Пилот",
+            mosaic_btn: "✨ Создать мозаику", session_name_btn: "Создать заголовок", session_expand_btn: "Расширить (+2)",
+            session_bgm_btn: "Добавить музыку", theme_btn: "🎨 Применить тему", theme_reset: "Сброс",
+            copilot_msg: "Привет! Я твой игровой ассистент.",
+            p_url: "https://... или <iframe...>", p_mosaic: "Напр: 'CS2 Турнир'", p_theme: "Напр: 'Киберпанк'", p_chat: "Ваш вопрос...", p_key: "Вставьте ключ..."
+        },
+        zh: {
+            header_ai: "✨ AI工具", header_add: "+ 添加", header_chat: "💬 聊天",
+            chat_title: "聊天室", chat_hide: "隐藏", chat_select_default: "选择频道...",
+            chat_placeholder: "请在上方选择一个频道。",
+            modal_add_title: "添加内容", modal_add_desc: "粘贴 URL 或 HTML 代码。",
+            modal_add_btn: "添加到马赛克", modal_add_tip: "提示：如果网站无法加载，请点击卡片上的 ↗。",
+            ai_title: "MultiVPlayers AI ✨", ai_key_label: "Gemini API 密钥:", ai_save_btn: "保存",
+            tab_mosaic: "魔法马赛克", tab_session: "🧠 会话", tab_theme: "🎨 主题", tab_copilot: "副驾驶",
+            mosaic_btn: "✨ 生成马赛克", session_name_btn: "生成标题", session_expand_btn: "扩展 (+2)",
+            session_bgm_btn: "添加背景音乐", theme_btn: "🎨 应用主题", theme_reset: "重置",
+            copilot_msg: "你好！我是你的游戏助手。",
+            p_url: "https://... 或 <iframe...>", p_mosaic: "例如：'CS2 直播'", p_theme: "例如：'赛博朋克'", p_chat: "你的问题...", p_key: "在此粘贴密钥..."
+        },
+        ja: {
+            header_ai: "✨ AIツール", header_add: "+ 追加", header_chat: "💬 チャット",
+            chat_title: "チャット", chat_hide: "隠す", chat_select_default: "チャンネルを選択...",
+            chat_placeholder: "チャットをロードするには上からチャンネルを選択してください。",
+            modal_add_title: "コンテンツを追加", modal_add_desc: "URLまたはHTMLコードを貼り付け。",
+            modal_add_btn: "モザイクに追加", modal_add_tip: "ヒント：サイトが読み込まれない場合は、↗ボタンを使用してください。",
+            ai_title: "MultiVPlayers AI ✨", ai_key_label: "Gemini APIキー:", ai_save_btn: "保存",
+            tab_mosaic: "魔法のモザイク", tab_session: "🧠 セッション", tab_theme: "🎨 テーマ", tab_copilot: "コパイロット",
+            mosaic_btn: "✨ モザイク生成", session_name_btn: "タイトル生成", session_expand_btn: "拡張 (+2)",
+            session_bgm_btn: "BGMを追加", theme_btn: "🎨 テーマ適用", theme_reset: "リセット",
+            copilot_msg: "こんにちは！あなたのゲームアシスタントです。",
+            p_url: "https://... または <iframe...>", p_mosaic: "例: 'CS2 ライブ'", p_theme: "例: 'サイバーパンク'", p_chat: "質問を入力...", p_key: "キーをここに貼り付け..."
+        }
+    };
+
     if (!currentHostname) {
         document.getElementById('fileProtocolWarning').style.display = 'block';
         document.querySelector('.video-area').style.marginTop = '40px';
@@ -560,6 +794,7 @@
         fab: document.getElementById('fab'),
         chatFab: document.getElementById('toggleChatFab'),
         aiFab: document.getElementById('aiFab'),
+        langSelect: document.getElementById('langSelect'), // Novo
         
         overlay: document.getElementById('urlInputOverlay'),
         aiOverlay: document.getElementById('aiOverlay'),
@@ -600,8 +835,35 @@
     window.addEventListener('DOMContentLoaded', () => {
         loadData();
         loadApiKey();
-        window.addEventListener('resize', resizeGrid); // Re-calculate on window resize
+        setLanguage(currentLang);
+        window.addEventListener('resize', resizeGrid); 
     });
+
+    // --- Language Logic ---
+    els.langSelect.value = currentLang;
+    els.langSelect.addEventListener('change', (e) => {
+        setLanguage(e.target.value);
+    });
+
+    function setLanguage(lang) {
+        currentLang = lang;
+        localStorage.setItem(LANG_KEY, lang);
+        
+        const t = translations[lang] || translations['pt'];
+        
+        // Update text content
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.dataset.i18n;
+            if (t[key]) el.textContent = t[key];
+        });
+
+        // Update placeholders
+        if (t.p_url) els.input.placeholder = t.p_url;
+        if (t.p_mosaic) els.mosaicPrompt.placeholder = t.p_mosaic;
+        if (t.p_theme) els.themePrompt.placeholder = t.p_theme;
+        if (t.p_chat) els.chatInput.placeholder = t.p_chat;
+        if (t.p_key) els.apiKeyInput.placeholder = t.p_key;
+    }
 
     // --- Event Listeners ---
     els.fab.onclick = () => toggleOverlay(els.overlay, true);
@@ -766,26 +1028,29 @@
         els.sessionNameBtn.innerText = "Gerando...";
         
         try {
+            // Se o idioma não for PT, instrui a IA a gerar no idioma correto
+            const langInstruction = currentLang !== 'pt' ? `(em idioma ${currentLang})` : '(em Português)';
+            
             const payload = {
-                contents: [{ parts: [{ text: `Analise estas URLs/Canais: ${JSON.stringify(urls)}. Crie um Título curto, criativo e empolgante para esta sessão multitelas (em Português) com um Emoji. Ex: "🔥 Noite de CS:GO", "📚 Deep Focus". Retorne APENAS o texto do título.` }] }],
+                contents: [{ parts: [{ text: `Analise estas URLs/Canais: ${JSON.stringify(urls)}. Crie um Título curto, criativo e empolgante para esta sessão multitelas ${langInstruction} com um Emoji. Retorne APENAS o texto do título.` }] }],
                 tools: [{ "google_search": {} }] 
             };
             const data = await callGemini(payload);
             const title = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sessão Multitelas";
             
             els.sessionTitle.innerText = title.replace(/["']/g, ""); 
-            els.sessionTitle.classList.add('visible'); // Mostra suavemente
+            els.sessionTitle.classList.add('visible'); 
             toggleOverlay(els.aiOverlay, false);
             
         } catch(e) {
             alert("Erro: " + e.message);
         } finally {
             els.sessionNameBtn.disabled = false;
-            els.sessionNameBtn.innerText = "Gerar Título";
+            els.sessionNameBtn.innerText = "Gerar Título"; // Reseta texto
+            setLanguage(currentLang); // Restaura texto traduzido correto
         }
     }
     
-    // --- NOVO: EXPANDIR SESSÃO ---
     async function handleExpandSession() {
         const urls = getCurrentUrls();
         if (urls.length === 0) return alert("Adicione algo primeiro para a IA expandir!");
@@ -813,16 +1078,16 @@
             if (Array.isArray(newUrls)) {
                 let added = 0;
                 newUrls.forEach(url => { if (processUrl(url)) added++; });
-                els.sessionStatus.innerText = `Sessão expandida! +${added} vídeos.`;
+                els.sessionStatus.innerText = `+${added} videos!`;
                 toggleOverlay(els.aiOverlay, false);
             } else {
                 throw new Error("Formato inválido.");
             }
         } catch (e) {
-             els.sessionStatus.innerText = "Erro ao expandir: " + e.message;
+             els.sessionStatus.innerText = "Erro: " + e.message;
         } finally {
             els.expandSessionBtn.disabled = false;
-            els.expandSessionBtn.innerText = "Expandir Magic (+2)";
+            setLanguage(currentLang);
         }
     }
 
@@ -844,7 +1109,7 @@
             const urlMatch = url.match(/https?:\/\/[^\s]+/);
             if (urlMatch) {
                 processUrl(urlMatch[0]);
-                els.sessionStatus.innerText = "Música de ambiente adicionada!";
+                els.sessionStatus.innerText = "♫ BGM Add!";
             } else {
                 throw new Error("Não encontrei uma URL válida.");
             }
@@ -853,7 +1118,7 @@
             els.sessionStatus.innerText = "Erro: " + e.message;
         } finally {
             els.ambienceBtn.disabled = false;
-            els.ambienceBtn.innerText = "Sugerir & Adicionar";
+            setLanguage(currentLang);
         }
     }
 
@@ -863,7 +1128,7 @@
         if (!theme) return;
         
         els.themeBtn.disabled = true;
-        els.themeBtn.innerText = "Criando...";
+        els.themeBtn.innerText = "...";
 
         try {
             const payload = {
@@ -889,7 +1154,7 @@
             alert("Erro: " + e.message);
         } finally {
             els.themeBtn.disabled = false;
-            els.themeBtn.innerText = "🎨 Aplicar Tema";
+            setLanguage(currentLang);
         }
     }
 
@@ -910,11 +1175,13 @@
 
         addChatMsg(msg, 'user');
         els.chatInput.value = '';
-        const loadingId = addChatMsg("Pensando...", 'ai', true);
+        const loadingId = addChatMsg("...", 'ai', true);
 
         try {
+            // Instrui a IA a responder no idioma selecionado
+            const langInstruction = currentLang !== 'pt' ? `(em idioma ${currentLang})` : '(em Português)';
             const payload = {
-                contents: [{ parts: [{ text: `Você é um assistente gamer. Responda curto em PT-BR. Usuário: ${msg}` }] }]
+                contents: [{ parts: [{ text: `Você é um assistente gamer. Responda curto ${langInstruction}. Usuário: ${msg}` }] }]
             };
             const data = await callGemini(payload);
             const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Erro.";
@@ -929,28 +1196,28 @@
     // 5. Raio-X IA
     async function handleAiInfo(url, toastId) {
         const toast = document.getElementById(toastId);
-        toast.innerText = "Analisando com IA...";
+        toast.innerText = "IA...";
         toast.classList.add('visible');
 
         try {
+            const langInstruction = currentLang !== 'pt' ? `(in language ${currentLang})` : '(em Português)';
             const payload = {
                 contents: [{ 
                     parts: [{ 
-                        text: `O que é este link? "${url}". Responda em UMA frase curta em Português dizendo quem é o streamer ou sobre o que é o site/vídeo.` 
+                        text: `O que é este link? "${url}". Responda em UMA frase curta ${langInstruction} dizendo quem é o streamer ou sobre o que é o site/vídeo.` 
                     }] 
                 }],
                 tools: [{ "google_search": {} }] 
             };
 
             const data = await callGemini(payload);
-            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Não consegui identificar.";
+            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "?";
             toast.innerText = "✨ " + reply;
             
-            // Auto hide após 6 segundos
             setTimeout(() => { toast.classList.remove('visible'); }, 6000);
 
         } catch (e) {
-            toast.innerText = "Erro ao analisar.";
+            toast.innerText = "Erro.";
             setTimeout(() => { toast.classList.remove('visible'); }, 3000);
         }
     }
@@ -970,31 +1237,28 @@
         if (el) el.remove();
     }
 
-    // --- Grid Resize Logic (Updated for "Pirâmide Invertida" and Full Height) ---
     function resizeGrid() {
         const cards = document.querySelectorAll('.content-card');
         const count = cards.length;
         
-        // Reset básico
         if (count === 0) return;
 
-        // Container adjustments
         els.grid.style.justifyContent = "center";
         
         let width = '100%';
-        let height = '50%'; // Padrão
+        let height = '50%'; 
 
         if (count === 1) {
             width = '100%';
             height = '100%';
         } else if (count === 2) {
-            width = '100%'; // Vertical Stack: Um em cima, um embaixo
+            width = '100%'; 
             height = '50%';
         } else if (count === 3) {
-            width = 'calc(50% - 10px)'; // Pirâmide Invertida (2 em cima, 1 embaixo centralizado pelo justify-content)
+            width = 'calc(50% - 10px)'; 
             height = '50%';
         } else if (count === 4) {
-            width = 'calc(50% - 10px)'; // 2x2
+            width = 'calc(50% - 10px)'; 
             height = '50%';
         } else if (count >= 5 && count <= 6) {
             width = 'calc(33.33% - 10px)';
@@ -1005,31 +1269,23 @@
         }
 
         cards.forEach((card) => {
-            // Aplica largura
             card.style.flex = `0 0 ${width}`;
             card.style.maxWidth = width;
             
-            // Aplica altura
-            // IMPORTANTE: Removemos padding-bottom do wrapper para usar altura fixa real
             const wrapper = card.querySelector('.iframe-wrapper');
             if (wrapper) {
-                wrapper.style.paddingBottom = '0'; // Remove aspect ratio hack
-                wrapper.style.height = '100%'; // Enche o card
+                wrapper.style.paddingBottom = '0'; 
+                wrapper.style.height = '100%'; 
             }
             
-            // Ajuste fino para altura do card
-            // Se for 1, ocupa 100% da área visível (menos margens)
             if (count === 1) {
                 card.style.height = '100%';
             } else {
-                // Calcula altura baseada na view port disponível da área de vídeo
-                // Subtrai um pouco para gaps (aprox 20px)
                 card.style.height = `calc(${height} - 10px)`;
             }
         });
     }
 
-    // --- Lógica de Embed ---
     function generateEmbed(url) {
         if (url.startsWith('<iframe') || url.startsWith('<embed')) {
             let cleanHtml = url;
@@ -1043,7 +1299,6 @@
             const hostname = urlObj.hostname.toLowerCase();
             const path = urlObj.pathname;
 
-            // TWITCH
             if (hostname.includes('twitch.tv')) {
                 const parents = new Set(['localhost', '127.0.0.1']);
                 if (currentHostname) parents.add(currentHostname);
@@ -1068,7 +1323,6 @@
                 }
             }
 
-            // YOUTUBE
             if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
                 let videoId = '';
                 if (hostname.includes('youtu.be')) videoId = path.substring(1);
@@ -1081,7 +1335,6 @@
                 }
             }
 
-            // KICK
             if (hostname.includes('kick.com')) {
                 const parts = path.split('/').filter(p => p);
                 if (parts.length > 0) {
@@ -1089,7 +1342,6 @@
                 }
             }
 
-            // GENÉRICO (SANDBOX FIXED)
             return {
                 html: `<iframe src="${url}" allowfullscreen sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation"></iframe>`,
                 type: 'generic'
@@ -1106,7 +1358,6 @@
         card.className = 'content-card';
         card.dataset.url = url;
 
-        // Header Overlay
         const header = document.createElement('div');
         header.className = 'card-header-overlay';
         
@@ -1138,7 +1389,7 @@
         const openBtn = document.createElement('button');
         openBtn.className = 'btn-icon';
         openBtn.innerHTML = '&#8599;'; 
-        openBtn.title = 'Abrir no navegador';
+        openBtn.title = 'Abrir';
         openBtn.onclick = () => window.open(url, '_blank');
 
         const closeBtn = document.createElement('button');
@@ -1149,7 +1400,7 @@
             removeData(url);
             if(embedData.type === 'twitch_live') removeChatOption(embedData.channel);
             card.remove();
-            resizeGrid(); // IMPORTANT: resize on remove
+            resizeGrid(); 
         };
 
         rightGroup.append(refreshBtn, openBtn, closeBtn);
@@ -1165,7 +1416,7 @@
         card.appendChild(wrapper);
         els.grid.appendChild(card);
         
-        resizeGrid(); // IMPORTANT: resize on add
+        resizeGrid(); 
     }
 
     function addChatOption(channel) {
@@ -1237,8 +1488,11 @@
             const embedData = generateEmbed(url);
             if (embedData) createCard(url, embedData);
         });
-        resizeGrid(); // Ensure resizing on load
+        resizeGrid(); 
     }
   </script>
 </body>
 </html>
+```
+
+Agora seu site fala o mundo todo! Basta selecionar a bandeira no topo e a mágica acontece. A IA também responderá no idioma selecionado.
