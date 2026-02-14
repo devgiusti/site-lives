@@ -1350,9 +1350,11 @@
 
             return {
                 html: `<iframe src="${url}" 
-                        style="width: calc(100% + 20px); height: calc(100% + 20px); margin: -10px; border: none; display: block;" 
-                        scrolling="no" 
+                        width="100%" 
+                        height="100%" 
                         frameborder="0" 
+                        scrolling="no" 
+                        style="overflow:hidden; border:none; display:block;" 
                         allowfullscreen 
                         allow="autoplay; encrypted-media; picture-in-picture">
                        </iframe>`,
