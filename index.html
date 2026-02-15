@@ -272,6 +272,41 @@
       gap: 10px;
     }
 
+    .chat-filters {
+        display: flex;
+        gap: 2px;
+        margin-left: 5px; 
+    }
+    .filter-btn {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.3;
+        transition: all 0.2s;
+        filter: grayscale(100%);
+    }
+    .filter-btn svg {
+        width: 16px;
+        height: 16px;
+        display: block;
+    }
+    .filter-btn:hover {
+        opacity: 0.8;
+        background: rgba(255,255,255,0.1);
+        filter: grayscale(0%);
+    }
+    .filter-btn.active {
+        opacity: 1;
+        background: rgba(255,255,255,0.15);
+        filter: grayscale(0%);
+        box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    }
+
     .chat-select {
       flex-grow: 1;
       background-color: rgba(0,0,0,0.3);
@@ -443,7 +478,25 @@
       <!-- Painel Lateral de Chat -->
       <div class="chat-panel" id="chatPanel">
         <div class="chat-header">
-          <strong data-i18n="chat_title">Chats</strong>
+          <div style="display:flex; align-items:center; gap:8px;">
+              <strong data-i18n="chat_title">Chats</strong>
+              
+              <div class="chat-filters">
+                  <button class="filter-btn active" onclick="filterChats('twitch')" title="Twitch">
+                    <svg viewBox="0 0 24 24" fill="#a970ff"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
+                  </button>
+
+                  <button class="filter-btn" onclick="filterChats('kick')" title="Kick">
+                    <svg viewBox="0 0 24 24" fill="#53fc18"><path d="M18.66 1.37h-3.92v6.23h-1.07l-4.1-6.23h-3.9v21.27h3.9v-6.91h1.07l4.1 6.91h3.92l-5.69-8.79z"/></svg>
+                  </button>
+
+                  <button class="filter-btn" onclick="filterChats('youtube')" title="YouTube">
+                    <svg viewBox="0 0 24 24" fill="#ff0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                  </button>
+                  
+              </div>
+          </div>
+
           <button onclick="toggleChat()" data-i18n="chat_hide" title="Ocultar" style="background:none; border:none; color:var(--text-color); cursor:pointer;">&#10005;</button>
         </div>
         
@@ -573,7 +626,8 @@
     const LS_KEY = 'multiVPlayers_final_data';
     const API_KEY_LS = 'gemini_api_key';
     const LANG_KEY = 'multiVPlayers_lang';
-    let twitchChannels = [];
+    let chatChannels = []; 
+    let activeChatFilter = 'all';
     let currentHostname = window.location.hostname;
     const systemApiKey = ""; 
     let currentLang = localStorage.getItem(LANG_KEY) || 'pt';
@@ -1311,7 +1365,7 @@
 
                 if (pathParts.length > 0 && !path.includes('/videos/') && !path.includes('/clip/')) {
                     const channel = pathParts[0];
-                    addChatOption(channel);
+                    addChatOption(channel, 'twitch');
 
                     return {
                         type: 'twitch_live_api',
@@ -1346,6 +1400,7 @@
                 else videoId = urlObj.searchParams.get('v');
 
                 if (videoId) {
+                    addChatOption(videoId, 'youtube');
                     return { html: `<iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>` };
                 }
             }
@@ -1353,6 +1408,7 @@
             if (hostname.includes('kick.com')) {
                 const parts = path.split('/').filter(p => p);
                 if (parts.length > 0) {
+                    addChatOption(parts[0], 'kick');
                     return { html: `<iframe src="https://player.kick.com/${parts[0]}" allowfullscreen></iframe>` };
                 }
             }
@@ -1469,36 +1525,67 @@
         resizeGrid(); 
     }
 
-    function addChatOption(channel) {
-        if (!twitchChannels.includes(channel)) {
-            twitchChannels.push(channel);
+    // --- Lógica de Filtros e Chat ---
+
+    function filterChats(platform) {
+        activeChatFilter = platform;
+        
+        // Atualiza visual dos botões (quem está ativo)
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.getAttribute('onclick').includes(`'${platform}'`)) {
+                btn.classList.add('active');
+            }
+        });
+        renderChatOptions(); // Atualiza a lista
+    }
+
+    // Adiciona canal com a plataforma correta
+    function addChatOption(channel, platform = 'twitch') {
+        const exists = chatChannels.find(c => c.name === channel && c.platform === platform);
+        if (!exists) {
+            chatChannels.push({ name: channel, platform: platform });
             renderChatOptions();
-            if (twitchChannels.length === 1) {
-                els.chatSelect.value = channel;
+            
+            // Auto-selecionar se for o primeiro
+            if (chatChannels.length === 1) {
+                els.chatSelect.value = JSON.stringify({ name: channel, platform: platform });
                 changeChat();
             }
         }
     }
 
     function removeChatOption(channel) {
-        twitchChannels = twitchChannels.filter(c => c !== channel);
+        chatChannels = chatChannels.filter(c => c.name !== channel);
         renderChatOptions();
-        if (els.chatSelect.value === channel) {
-            els.chatSelect.value = "";
-            changeChat();
-        }
+        resetChat();
     }
 
     function renderChatOptions() {
-        const current = els.chatSelect.value;
+        // Limpa o select
         while (els.chatSelect.options.length > 1) els.chatSelect.remove(1);
-        twitchChannels.forEach(ch => {
+        
+        // Filtra baseado no botão clicado
+        const filtered = chatChannels.filter(c => {
+            if (activeChatFilter === 'all') return true;
+            return c.platform === activeChatFilter;
+        });
+
+        // Cria as opções
+        filtered.forEach(c => {
             const opt = document.createElement('option');
-            opt.value = ch;
-            opt.textContent = ch;
+            // Guarda dados no value
+            opt.value = JSON.stringify({ name: c.name, platform: c.platform });
+            
+            // Ícone visual no texto
+            let icon = '';
+            if(c.platform === 'twitch') icon = '🟣 ';
+            if(c.platform === 'kick') icon = '🟢 ';
+            if(c.platform === 'youtube') icon = '🔴 ';
+            
+            opt.textContent = icon + c.name;
             els.chatSelect.appendChild(opt);
         });
-        if (twitchChannels.includes(current)) els.chatSelect.value = current;
     }
 
     function resetChat() {
@@ -1507,15 +1594,31 @@
     }
 
     function changeChat() {
-        const channel = els.chatSelect.value;
-        if (channel) {
-            const parents = new Set(['localhost', '127.0.0.1']);
-            if (currentHostname) parents.add(currentHostname);
-            const parentString = Array.from(parents).map(p => `&parent=${p}`).join('');
-            els.chatContainer.innerHTML = `<iframe src="https://www.twitch.tv/embed/${channel}/chat?darkpopout${parentString}" width="100%" height="100%" frameborder="0"></iframe>`;
-        } else {
-            els.chatContainer.innerHTML = `<div class="chat-placeholder"><p>Selecione um canal.</p></div>`;
+        const val = els.chatSelect.value;
+        if (!val) {
+            els.chatContainer.innerHTML = `<div class="chat-placeholder"><p data-i18n="chat_placeholder">Selecione um canal acima.</p></div>`;
+            return;
         }
+
+        try {
+            const data = JSON.parse(val); 
+            const channel = data.name;
+            const platform = data.platform;
+
+            if (platform === 'twitch') {
+                const parents = new Set(['localhost', '127.0.0.1']);
+                if (currentHostname) parents.add(currentHostname);
+                const parentString = Array.from(parents).map(p => `&parent=${p}`).join('');
+                els.chatContainer.innerHTML = `<iframe src="https://www.twitch.tv/embed/${channel}/chat?darkpopout${parentString}" width="100%" height="100%" frameborder="0"></iframe>`;
+            } 
+            else if (platform === 'kick') {
+                els.chatContainer.innerHTML = `<iframe src="https://kick.com/popout/${channel}/chat" width="100%" height="100%" frameborder="0"></iframe>`;
+            }
+            else if (platform === 'youtube') {
+                const domain = window.location.hostname;
+                els.chatContainer.innerHTML = `<iframe src="https://www.youtube.com/live_chat?v=${channel}&embed_domain=${domain}" width="100%" height="100%" frameborder="0"></iframe>`;
+            }
+        } catch(e) { console.error(e); }
     }
 
     function saveData(url) {
