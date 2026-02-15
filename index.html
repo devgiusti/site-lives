@@ -1311,21 +1311,24 @@
                 const parentString = Array.from(parents).map(p => `&parent=${p}`).join('');
 
                 const pathParts = path.split('/').filter(p => p);
+                
+                const allowAttr = 'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"';
+
                 if (pathParts.length > 0 && !path.includes('/videos/') && !path.includes('/clip/')) {
                     const channel = pathParts[0];
                     addChatOption(channel);
                     return {
-                        html: `<iframe src="https://player.twitch.tv/?channel=${channel}${parentString}&muted=false" allowfullscreen></iframe>`,
+                        html: `<iframe src="https://player.twitch.tv/?channel=${channel}${parentString}&muted=true" width="100%" height="100%" frameborder="0" allowfullscreen ${allowAttr}></iframe>`,
                         type: 'twitch_live',
                         channel: channel
                     };
                 }
                 if (path.includes('/videos/')) {
                     const videoId = path.split('/videos/')[1].split('/')[0];
-                    return { html: `<iframe src="https://player.twitch.tv/?video=${videoId}${parentString}&autoplay=false" allowfullscreen></iframe>` };
+                    return { html: `<iframe src="https://player.twitch.tv/?video=${videoId}${parentString}&autoplay=false" width="100%" height="100%" frameborder="0" allowfullscreen ${allowAttr}></iframe>` };
                 }
                 if (path.includes('/clip/')) {
-                     return { html: `<iframe src="https://clips.twitch.tv/embed?clip=${path.split('/').pop()}${parentString}&autoplay=false" allowfullscreen></iframe>`};
+                     return { html: `<iframe src="https://clips.twitch.tv/embed?clip=${path.split('/').pop()}${parentString}&autoplay=false" width="100%" height="100%" frameborder="0" allowfullscreen ${allowAttr}></iframe>`};
                 }
             }
 
