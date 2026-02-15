@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
   <title>MultiVPlayers - Gemini Ultra</title>
+  <script src="https://embed.twitch.tv/embed/v1.js"></script>
   <style>
     /* --- Variáveis CSS para o Tema Dinâmico --- */
     :root {
@@ -1306,39 +1307,22 @@
             const path = urlObj.pathname;
 
             if (hostname.includes('twitch.tv')) {
-                const parents = new Set();
-                
-                parents.add('localhost');
-                parents.add('127.0.0.1');
-
-                if (window.location.hostname) {
-                    parents.add(window.location.hostname);
-                }
-
-                const parentString = Array.from(parents).map(p => `&parent=${p}`).join('');
-                
                 const pathParts = path.split('/').filter(p => p);
-
-                const permissions = 'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"';
 
                 if (pathParts.length > 0 && !path.includes('/videos/') && !path.includes('/clip/')) {
                     const channel = pathParts[0];
                     addChatOption(channel);
-                    
+
                     return {
-                        html: `<iframe 
-                                src="https://player.twitch.tv/?channel=${channel}${parentString}&muted=true&autoplay=true" 
-                                width="100%" 
-                                height="100%" 
-                                frameborder="0" 
-                                scrolling="no" 
-                                allowfullscreen="true" 
-                                ${permissions}>
-                               </iframe>`,
-                        type: 'twitch_live',
+                        type: 'twitch_live_api',
                         channel: channel
                     };
                 }
+
+                const parents = new Set(['localhost', '127.0.0.1']);
+                if (window.location.hostname) parents.add(window.location.hostname);
+                const parentString = Array.from(parents).map(p => `&parent=${p}`).join('');
+                const permissions = 'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"';
 
                 if (path.includes('/videos/')) {
                     const videoId = path.split('/videos/')[1].split('/')[0];
@@ -1448,12 +1432,39 @@
 
         const wrapper = document.createElement('div');
         wrapper.className = 'iframe-wrapper';
-        wrapper.innerHTML = embedData.html;
 
-        card.appendChild(header);
-        card.appendChild(toast);
-        card.appendChild(wrapper);
-        els.grid.appendChild(card);
+        if (embedData.type === 'twitch_live_api') {
+
+            const uniqueId = 'twitch-embed-' + Date.now() + Math.floor(Math.random() * 1000);
+            wrapper.id = uniqueId;
+
+            card.appendChild(header);
+            card.appendChild(toast);
+            card.appendChild(wrapper);
+            els.grid.appendChild(card);
+
+            setTimeout(() => {
+                const parents = ['localhost', '127.0.0.1'];
+                if (window.location.hostname) parents.push(window.location.hostname);
+                
+                new Twitch.Embed(uniqueId, {
+                    width: "100%",
+                    height: "100%",
+                    channel: embedData.channel,
+                    layout: "video",
+                    autoplay: true,
+                    muted: true,
+                    parent: parents
+                });
+            }, 100);
+        } else {
+
+            wrapper.innerHTML = embedData.html;
+            card.appendChild(header);
+            card.appendChild(toast);
+            card.appendChild(wrapper);
+            els.grid.appendChild(card);
+        }
         
         resizeGrid(); 
     }
