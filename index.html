@@ -159,6 +159,43 @@
       position: relative;
     }
 
+    .content-card.dragging {
+        opacity: 0.5;
+        border: 2px dashed var(--accent-color);
+    }
+
+    .content-card.over {
+        border: 3px solid var(--accent-color) !important;
+        opacity: 0.9;
+    }
+
+    /* O cursor de mover deve estar apenas no ícone ✥ */
+    .drag-handle {
+        cursor: grab !important;
+        pointer-events: auto !important;
+    }
+    .drag-handle:active {
+        cursor: grabbing !important;
+    }
+
+    /* Garante que o iframe e botões funcionem normalmente */
+    .iframe-wrapper iframe, .btn-icon, .lang-select {
+        pointer-events: auto;
+    }
+
+    /* O PULO DO GATO: Desativa iframes enquanto arrasta para não travar o mouse */
+    body.is-dragging iframe {
+        pointer-events: none; 
+    }
+    
+    /* Cursor de movimento no cabeçalho */
+    .card-header-overlay {
+        cursor: grab;
+    }
+    .card-header-overlay:active {
+        cursor: grabbing;
+    }
+
     .video-area::-webkit-scrollbar { width: 8px; }
     .video-area::-webkit-scrollbar-track { background: var(--bg-color); }
     .video-area::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
@@ -1437,11 +1474,41 @@
         card.className = 'content-card';
         card.dataset.url = url;
 
+        // O card é o ALVO do drop, mas não inicia o drag sozinho
+        card.addEventListener('dragover', handleDragOver);
+        card.addEventListener('dragenter', handleDragEnter);
+        card.addEventListener('dragleave', handleDragLeave);
+        card.addEventListener('drop', handleDrop);
+        card.addEventListener('dragend', handleDragEnd);
+        card.addEventListener('dragover', handleDragOver);
+        card.addEventListener('dragenter', handleDragEnter);
+        card.addEventListener('dragleave', handleDragLeave);
+        card.addEventListener('drop', handleDrop);
+        card.addEventListener('dragend', handleDragEnd);
+        // ---------------------------
+
         const header = document.createElement('div');
         header.className = 'card-header-overlay';
         
         const leftGroup = document.createElement('div');
         leftGroup.className = 'btn-group';
+        
+        // --- ADICIONE ESTE BLOCO (ÍCONE DE MOVER) ---
+        const moveIcon = document.createElement('span');
+        moveIcon.className = 'drag-handle'; // Classe CSS para o cursor
+        moveIcon.innerHTML = '&#10021;'; 
+        moveIcon.style.color = 'rgba(255,255,255,0.6)';
+        moveIcon.style.fontSize = '18px';
+        moveIcon.style.marginRight = '8px';
+        moveIcon.title = 'Clique aqui para arrastar e trocar de posição';
+        
+        // APENAS o ícone inicia o movimento do card pai
+        moveIcon.onmousedown = () => { card.draggable = true; };
+        moveIcon.onmouseup = () => { card.draggable = false; };
+        card.addEventListener('dragstart', handleDragStart);
+        
+        leftGroup.appendChild(moveIcon);
+        // ---------------------------------------------
         
         const aiInfoBtn = document.createElement('button');
         aiInfoBtn.className = 'btn-icon btn-ai-info';
@@ -1475,9 +1542,24 @@
         closeBtn.className = 'btn-icon btn-remove';
         closeBtn.innerHTML = '&#10005;';
         closeBtn.title = 'Remover';
-        closeBtn.onclick = () => {
+        closeBtn.onclick = (e) => {
+            e.stopPropagation(); // Impede que o clique ative o arrastar
+            
+            // 1. Remove do LocalStorage
             removeData(url);
-            if(embedData.type === 'twitch_live') removeChatOption(embedData.channel);
+            
+            // 2. Remove da lista de canais de chat
+            if (embedData.channel) {
+                removeChatOption(embedData.channel);
+            } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                const ytId = url.match(/(?:v=|\/embed\/|\/shorts\/|\/.be\/)([^&?/\s]+)/);
+                if (ytId) removeChatOption(ytId[1]);
+            } else if (url.includes('kick.com')) {
+                const kickName = url.split('/').pop();
+                removeChatOption(kickName);
+            }
+
+            // 3. Remove o card visualmente e ajusta o grid
             card.remove();
             resizeGrid(); 
         };
@@ -1553,9 +1635,15 @@
     }
 
     function removeChatOption(channel) {
+        // Remove o canal da memória
         chatChannels = chatChannels.filter(c => c.name !== channel);
+        
+        // Limpa o seletor visual e reconstrói as opções
+        els.chatSelect.value = ""; 
         renderChatOptions();
-        resetChat();
+        
+        // Se o chat aberto era o que foi deletado, volta pra tela preta
+        els.chatContainer.innerHTML = `<div class="chat-placeholder"><p data-i18n="chat_placeholder">Selecione um canal acima.</p></div>`;
     }
 
     function renderChatOptions() {
@@ -1616,6 +1704,82 @@
                 els.chatContainer.innerHTML = `<iframe src="https://www.youtube.com/live_chat?v=${channel}&embed_domain=${domain}" width="100%" height="100%" frameborder="0"></iframe>`;
             }
         } catch(e) { console.error(e); }
+    }
+
+    // --- Função para Reordenar Cards ---
+    // --- Funções de Drag and Drop (Arrastar) ---
+    let dragSrcEl = null;
+
+    function handleDragStart(e) {
+        dragSrcEl = this;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.dataset.url);
+        this.classList.add('dragging');
+        document.body.classList.add('is-dragging'); // Bloqueia iframes
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault(); 
+        e.dataTransfer.dropEffect = 'move';
+        return false;
+    }
+
+    function handleDragEnter(e) {
+        // Remove o destaque de qualquer outro card antes de destacar o novo
+        document.querySelectorAll('.content-card').forEach(c => c.classList.remove('over'));
+        this.classList.add('over');
+    }
+
+    function handleDragLeave(e) {
+        // Só remove se estiver saindo para fora do grid, caso contrário handleDragEnter resolve
+        if (e.relatedTarget && !this.contains(e.relatedTarget)) {
+            // Pode manter vazio para o rastro ser mais persistente
+        }
+    }
+
+    function handleDragEnd(e) {
+        // Remove todas as classes de estado de todos os cards de uma vez
+        this.classList.remove('dragging');
+        document.body.classList.remove('is-dragging');
+        
+        const allCards = document.querySelectorAll('.content-card');
+        allCards.forEach(card => {
+            card.classList.remove('over');
+            card.classList.remove('dragging');
+        });
+    }
+
+    function handleDrop(e) {
+        if (e.stopPropagation) { e.stopPropagation(); }
+        this.classList.remove('over');
+        if (dragSrcEl !== this) {
+            const oldUrl = dragSrcEl.dataset.url;
+            const newUrl = this.dataset.url;
+
+            // Reordena e Salva
+            let data = JSON.parse(localStorage.getItem(LS_KEY)) || [];
+            const oldIndex = data.indexOf(oldUrl);
+            const newIndex = data.indexOf(newUrl);
+
+            if (oldIndex > -1 && newIndex > -1) {
+                // Faz uma troca real: o 1 vai para o 6 e o 6 vai para o 1
+                const temp = data[oldIndex];
+                data[oldIndex] = data[newIndex];
+                data[newIndex] = temp;
+
+                localStorage.setItem(LS_KEY, JSON.stringify(data));
+                
+                // Recarrega visualmente
+                // Salva e recarrega
+                localStorage.setItem(LS_KEY, JSON.stringify(data));
+                
+                // Limpa o grid e remove classes de destaque imediatamente
+                els.grid.innerHTML = '';
+                document.body.classList.remove('is-dragging');
+                loadData();
+            }
+        }
+        return false;
     }
 
     function saveData(url) {
