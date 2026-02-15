@@ -482,12 +482,12 @@
               <strong data-i18n="chat_title">Chats</strong>
               
               <div class="chat-filters">
-                  <button class="filter-btn active" onclick="filterChats('twitch')" title="Twitch">
+                  <button class="filter-btn" onclick="filterChats('twitch')" title="Twitch">
                     <svg viewBox="0 0 24 24" fill="#a970ff"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
                   </button>
 
                   <button class="filter-btn" onclick="filterChats('kick')" title="Kick">
-                    <svg viewBox="0 0 24 24" fill="#53fc18"><path d="M18.66 1.37h-3.92v6.23h-1.07l-4.1-6.23h-3.9v21.27h3.9v-6.91h1.07l4.1 6.91h3.92l-5.69-8.79z"/></svg>
+                    <svg viewBox="0 0 512 512" fill="#53fc18"><path d="M37 .036h164.448v113.621h54.71v-56.82h54.731V.036h164.448v170.777h-54.73v56.82h-54.711v56.8h54.71v56.82h54.73V512.03H310.89v-56.82h-54.73v-56.8h-54.711v113.62H37V.036z" fill-rule="evenodd" clip-rule="evenodd" stroke-linejoin="round" stroke-miterlimit="2"/></svg>
                   </button>
 
                   <button class="filter-btn" onclick="filterChats('youtube')" title="YouTube">
@@ -627,7 +627,7 @@
     const API_KEY_LS = 'gemini_api_key';
     const LANG_KEY = 'multiVPlayers_lang';
     let chatChannels = []; 
-    let activeChatFilter = 'all';
+    let activeChatFilter = '';
     let currentHostname = window.location.hostname;
     const systemApiKey = ""; 
     let currentLang = localStorage.getItem(LANG_KEY) || 'pt';
@@ -1530,28 +1530,25 @@
     function filterChats(platform) {
         activeChatFilter = platform;
         
-        // Atualiza visual dos botões (quem está ativo)
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.classList.remove('active');
             if (btn.getAttribute('onclick').includes(`'${platform}'`)) {
                 btn.classList.add('active');
             }
         });
-        renderChatOptions(); // Atualiza a lista
+
+        renderChatOptions(); 
+        
+        els.chatSelect.value = ""; 
+        
     }
 
-    // Adiciona canal com a plataforma correta
     function addChatOption(channel, platform = 'twitch') {
         const exists = chatChannels.find(c => c.name === channel && c.platform === platform);
         if (!exists) {
             chatChannels.push({ name: channel, platform: platform });
             renderChatOptions();
-            
-            // Auto-selecionar se for o primeiro
-            if (chatChannels.length === 1) {
-                els.chatSelect.value = JSON.stringify({ name: channel, platform: platform });
-                changeChat();
-            }
+
         }
     }
 
